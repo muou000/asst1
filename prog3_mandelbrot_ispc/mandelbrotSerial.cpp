@@ -1,8 +1,8 @@
 /*
 
-  15418 Spring 2012 note: This code was modified from example code
-  originally provided by Intel.  To comply with Intel's open source
-  licensing agreement, their copyright is retained below.
+  15418 2012 年春季学期注：本代码由 Intel 最初提供的示例代码
+  修改而来。为遵守 Intel 的开源许可协议，
+  其版权声明保留在下方。
 
   -----------------------------------------------------------------
 
@@ -59,14 +59,14 @@ static inline int mandel(float c_re, float c_im, int count)
 //
 // MandelbrotSerial --
 //
-// Compute an image visualizing the mandelbrot set.  The resulting
-// array contains the number of iterations required before the complex
-// number corresponding to a pixel could be rejected from the set.
+// 计算一幅将 Mandelbrot 集可视化的图像。结果数组中保存的是：
+// 每个像素对应的复数在被判定不属于该集合（即被排除）之前
+// 所需的迭代次数。
 //
-// * x0, y0, x1, y1 describe the complex coordinates mapping
-//   into the image viewport.
-// * width, height describe the size of the output image
-// * startRow, totalRows describe how much of the image to compute
+// * x0, y0, x1, y1 描述复平面坐标
+//   到图像视口（viewport）的映射。
+// * width, height 描述输出图像的尺寸。
+// * startRow, totalRows 描述需要计算图像的哪些部分。
 void mandelbrotSerial(
     float x0, float y0, float x1, float y1,
     int width, int height,

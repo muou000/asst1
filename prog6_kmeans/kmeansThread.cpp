@@ -22,17 +22,16 @@ typedef struct {
 
 
 /**
- * Checks if the algorithm has converged.
- * 
- * @param prevCost Pointer to the K dimensional array containing cluster costs 
- *    from the previous iteration.
- * @param currCost Pointer to the K dimensional array containing cluster costs 
- *    from the current iteration.
- * @param epsilon Predefined hyperparameter which is used to determine when
- *    the algorithm has converged.
- * @param K The number of clusters.
- * 
- * NOTE: DO NOT MODIFY THIS FUNCTION!!!
+ * 检查算法是否已经收敛。
+ *
+ * @param prevCost 指向 K 维数组的指针，其中存放上一次迭代中
+ *    各 cluster 的代价。
+ * @param currCost 指向 K 维数组的指针，其中存放当前迭代中
+ *    各 cluster 的代价。
+ * @param epsilon 预先定义的超参数，用于判断算法何时收敛。
+ * @param K cluster 的数量。
+ *
+ * 注意：不要修改这个函数！！！
  */
 static bool stoppingConditionMet(double *prevCost, double *currCost,
                                  double epsilon, int K) {
@@ -44,14 +43,12 @@ static bool stoppingConditionMet(double *prevCost, double *currCost,
 }
 
 /**
- * Computes L2 distance between two points of dimension nDim.
- * 
- * @param x Pointer to the beginning of the array representing the first
- *     data point.
- * @param y Poitner to the beginning of the array representing the second
- *     data point.
- * @param nDim The dimensionality (number of elements) in each data point
- *     (must be the same for x and y).
+ * 计算两个 nDim 维点之间的 L2 距离。
+ *
+ * @param x 指向表示第一个数据点的数组开头的指针。
+ * @param y 指向表示第二个数据点的数组开头的指针。
+ * @param nDim 每个数据点的维度（元素个数）
+ *     （x 和 y 必须相同）。
  */
 double dist(double *x, double *y, int nDim) {
   double accum = 0.0;
@@ -62,18 +59,18 @@ double dist(double *x, double *y, int nDim) {
 }
 
 /**
- * Assigns each data point to its "closest" cluster centroid.
+ * 将每个数据点分配给“距离它最近”的 cluster centroid。
  */
 void computeAssignments(WorkerArgs *const args) {
   double *minDist = new double[args->M];
   
-  // Initialize arrays
+  // 初始化数组
   for (int m =0; m < args->M; m++) {
     minDist[m] = 1e30;
     args->clusterAssignments[m] = -1;
   }
 
-  // Assign datapoints to closest centroids
+  // 将数据点分配给最近的 centroid
   for (int k = args->start; k < args->end; k++) {
     for (int m = 0; m < args->M; m++) {
       double d = dist(&args->data[m * args->N],
@@ -89,13 +86,13 @@ void computeAssignments(WorkerArgs *const args) {
 }
 
 /**
- * Given the cluster assignments, computes the new centroid locations for
- * each cluster.
+ * 根据各数据点的 cluster assignment，为每个 cluster 计算新的
+ * centroid 位置。
  */
 void computeCentroids(WorkerArgs *const args) {
   int *counts = new int[args->K];
 
-  // Zero things out
+  // 全部清零
   for (int k = 0; k < args->K; k++) {
     counts[k] = 0;
     for (int n = 0; n < args->N; n++) {
@@ -104,7 +101,7 @@ void computeCentroids(WorkerArgs *const args) {
   }
 
 
-  // Sum up contributions from assigned examples
+  // 累加分配到各 cluster 的数据点的贡献
   for (int m = 0; m < args->M; m++) {
     int k = args->clusterAssignments[m];
     for (int n = 0; n < args->N; n++) {
@@ -114,9 +111,9 @@ void computeCentroids(WorkerArgs *const args) {
     counts[k]++;
   }
 
-  // Compute means
+  // 计算均值
   for (int k = 0; k < args->K; k++) {
-    counts[k] = max(counts[k], 1); // prevent divide by 0
+    counts[k] = max(counts[k], 1); // 防止除以 0
     for (int n = 0; n < args->N; n++) {
       args->clusterCentroids[k * args->N + n] /= counts[k];
     }
@@ -126,24 +123,24 @@ void computeCentroids(WorkerArgs *const args) {
 }
 
 /**
- * Computes the per-cluster cost. Used to check if the algorithm has converged.
+ * 计算每个 cluster 的代价。用于检查算法是否已经收敛。
  */
 void computeCost(WorkerArgs *const args) {
   double *accum = new double[args->K];
 
-  // Zero things out
+  // 全部清零
   for (int k = 0; k < args->K; k++) {
     accum[k] = 0.0;
   }
 
-  // Sum cost for all data points assigned to centroid
+  // 对所有分配到该 centroid 的数据点求代价之和
   for (int m = 0; m < args->M; m++) {
     int k = args->clusterAssignments[m];
     accum[k] += dist(&args->data[m * args->N],
                      &args->clusterCentroids[k * args->N], args->N);
   }
 
-  // Update costs
+  // 更新代价
   for (int k = args->start; k < args->end; k++) {
     args->currCost[k] = accum[k];
   }
@@ -152,34 +149,32 @@ void computeCost(WorkerArgs *const args) {
 }
 
 /**
- * Computes the K-Means algorithm, using std::thread to parallelize the work.
+ * 计算 K-Means 算法，使用 std::thread 对工作并行化。
  *
- * @param data Pointer to an array of length M*N representing the M different N 
- *     dimensional data points clustered. The data is layed out in a "data point
- *     major" format, so that data[i*N] is the start of the i'th data point in 
- *     the array. The N values of the i'th datapoint are the N values in the 
- *     range data[i*N] to data[(i+1) * N].
- * @param clusterCentroids Pointer to an array of length K*N representing the K 
- *     different N dimensional cluster centroids. The data is laid out in
- *     the same way as explained above for data.
- * @param clusterAssignments Pointer to an array of length M representing the
- *     cluster assignments of each data point, where clusterAssignments[i] = j
- *     indicates that data point i is closest to cluster centroid j.
- * @param M The number of data points to cluster.
- * @param N The dimensionality of the data points.
- * @param K The number of cluster centroids.
- * @param epsilon The algorithm is said to have converged when
- *     |currCost[i] - prevCost[i]| < epsilon for all i where i = 0, 1, ..., K-1
+ * @param data 指向长度为 M*N 的数组的指针，表示待聚类的 M 个不同的
+ *     N 维数据点。数据按“数据点优先”（data point major）的格式存放，
+ *     即 data[i*N] 是数组中第 i 个数据点的起始位置。第 i 个数据点的
+ *     N 个值，就是 data[i*N] 到 data[(i+1) * N] 范围内的那 N 个值。
+ * @param clusterCentroids 指向长度为 K*N 的数组的指针，表示 K 个不同的
+ *     N 维 cluster centroid。数据的存放方式与上面对 data 的说明相同。
+ * @param clusterAssignments 指向长度为 M 的数组的指针，表示每个数据点的
+ *     cluster assignment，其中 clusterAssignments[i] = j 表示数据点 i
+ *     距离第 j 个 cluster centroid 最近。
+ * @param M 待聚类的数据点个数。
+ * @param N 数据点的维度。
+ * @param K cluster centroid 的个数。
+ * @param epsilon 当对所有 i（i = 0, 1, ..., K-1）都满足
+ *     |currCost[i] - prevCost[i]| < epsilon 时，认为算法已经收敛。
  */
 void kMeansThread(double *data, double *clusterCentroids, int *clusterAssignments,
                int M, int N, int K, double epsilon) {
 
-  // Used to track convergence
+  // 用于跟踪收敛情况
   double *prevCost = new double[K];
   double *currCost = new double[K];
 
-  // The WorkerArgs array is used to pass inputs to and return output from
-  // functions.
+  // WorkerArgs 结构体用于向各函数传入输入，
+  // 并从函数带回输出。
   WorkerArgs args;
   args.data = data;
   args.clusterCentroids = clusterCentroids;
@@ -189,21 +184,21 @@ void kMeansThread(double *data, double *clusterCentroids, int *clusterAssignment
   args.N = N;
   args.K = K;
 
-  // Initialize arrays to track cost
+  // 初始化用于跟踪代价的数组
   for (int k = 0; k < K; k++) {
     prevCost[k] = 1e30;
     currCost[k] = 0.0;
   }
 
-  /* Main K-Means Algorithm Loop */
+  /* K-Means 算法主循环 */
   int iter = 0;
   while (!stoppingConditionMet(prevCost, currCost, epsilon, K)) {
-    // Update cost arrays (for checking convergence criteria)
+    // 更新代价数组（用于检查收敛条件）
     for (int k = 0; k < K; k++) {
       prevCost[k] = currCost[k];
     }
 
-    // Setup args struct
+    // 设置 args 结构体
     args.start = 0;
     args.end = K;
 

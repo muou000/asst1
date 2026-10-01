@@ -10,14 +10,14 @@ class CycleTimer {
   using Clock = std::chrono::steady_clock;
   using Seconds = std::chrono::duration<double>;
 
-  // Returns seconds elapsed since the first call, using a monotonic clock.
-  // Thread-safe since C++11 (static local initialization is thread-safe).
+  // 返回自第一次调用以来经过的秒数，使用单调时钟（monotonic clock）。
+  // 自 C++11 起是线程安全的（静态局部变量的初始化是线程安全的）。
   static inline double currentSeconds() {
     static const Clock::time_point t0 = Clock::now();
     return Seconds{Clock::now() - t0}.count();
   }
 
-  // Utility class: no instances.
+  // 工具类：禁止实例化。
   CycleTimer() = delete;
   ~CycleTimer() = delete;
   CycleTimer(const CycleTimer&) = delete;

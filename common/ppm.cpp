@@ -10,26 +10,25 @@ writePPMImage(int* data, int width, int height, const char *filename, int maxIte
 {
     FILE *fp = fopen(filename, "wb");
 
-    // write ppm header
+    // 写入 PPM 文件头
     fprintf(fp, "P6\n");
     fprintf(fp, "%d %d\n", width, height);
     fprintf(fp, "255\n");
 
     for (int i = 0; i < width*height; ++i) {
 
-        // Clamp iteration count for this pixel, then scale the value
-        // to 0-1 range.  Raise resulting value to a power (<1) to
-        // increase brightness of low iteration count
-        // pixels. a.k.a. Make things look cooler.
+        // 先对该像素的迭代次数做截断（clamp），再把数值缩放到 0-1
+        // 范围。然后将结果取一次幂（指数 <1），以提升低迭代次数
+        // 像素的亮度。 aka：让画面看起来更酷。
 
         float mapped = pow( std::min(static_cast<float>(maxIterations),
                                      static_cast<float>(data[i])) / 256.f, .5f);
 
-        // convert back into 0-255 range, 8-bit channels
+        // 转换回 0-255 范围（8 位通道）
         unsigned char result = static_cast<unsigned char>(255.f * mapped);
         for (int j = 0; j < 3; ++j)
             fputc(result, fp);
     }
     fclose(fp);
-    printf("Wrote image file %s\n", filename);
+    printf("已写入图像文件 %s\n", filename);
 }

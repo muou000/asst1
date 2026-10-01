@@ -1,7 +1,7 @@
 CXX=g++ -m64
 CXXFLAGS=-I../common -Iobjs/ -O2 -Wall 
 ISPC=ispc
-# note: requires AVX2
+# 注意：需要 AVX2
 ISPCFLAGS=-O3 --target=avx2-i32x8 --arch=x86-64 --pic
 
 APP_NAME=saxpy

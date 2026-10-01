@@ -24,7 +24,7 @@ int main(int argc, char * argv[]) {
   int N = 16;
   bool printLog = false;
 
-  // parse commandline options ////////////////////////////////////////////
+  // 解析命令行选项 ////////////////////////////////////////////
   int opt;
   static struct option long_options[] = {
     {"size", 1, 0, 's'},
@@ -39,7 +39,7 @@ int main(int argc, char * argv[]) {
       case 's':
         N = atoi(optarg);
         if (N <= 0) {
-          printf("Error: Workload size is set to %d (<0).\n", N);
+          printf("错误: 工作负载大小被设置为 %d (<0)。\n", N);
           return -1;
         }
         break;
@@ -66,32 +66,32 @@ int main(int argc, char * argv[]) {
   //absSerial(values, gold, N);
   //absVector(values, output, N);
 
-  printf("\e[1;31mCLAMPED EXPONENT\e[0m (required) \n");
+  printf("\e[1;31mCLAMPED EXPONENT（截断指数）\e[0m (必做) \n");
   bool clampedCorrect = verifyResult(values, exponents, output, gold, N);
   if (printLog) CS149Logger.printLog();
   CS149Logger.printStats();
 
-  printf("************************ Result Verification *************************\n");
+  printf("************************ 结果验证 *************************\n");
   if (!clampedCorrect) {
-    printf("@@@ Failed!!!\n");
+    printf("@@@ 测试失败!!!\n");
   } else {
-    printf("Passed!!!\n");
+    printf("测试通过!!!\n");
   }
 
-  printf("\n\e[1;31mARRAY SUM\e[0m (bonus) \n");
+  printf("\n\e[1;31mARRAY SUM（数组求和）\e[0m (加分题) \n");
   if (N % VECTOR_WIDTH == 0) {
     float sumGold = arraySumSerial(values, N);
     float sumOutput = arraySumVector(values, N);
     float epsilon = 0.1;
     bool sumCorrect = abs(sumGold - sumOutput) < epsilon * 2;
     if (!sumCorrect) {
-      printf("Expected %f, got %f\n.", sumGold, sumOutput);
-      printf("@@@ Failed!!!\n");
+      printf("期望值 %f, 实际得到 %f\n.", sumGold, sumOutput);
+      printf("@@@ 测试失败!!!\n");
     } else {
-      printf("Passed!!!\n");
+      printf("测试通过!!!\n");
     }
   } else {
-    printf("Must have N %% VECTOR_WIDTH == 0 for this problem (VECTOR_WIDTH is %d)\n", VECTOR_WIDTH);
+    printf("此题要求 N %% VECTOR_WIDTH == 0 (VECTOR_WIDTH 为 %d)\n", VECTOR_WIDTH);
   }
 
   delete [] values;
@@ -103,18 +103,18 @@ int main(int argc, char * argv[]) {
 }
 
 void usage(const char* progname) {
-  printf("Usage: %s [options]\n", progname);
-  printf("Program Options:\n");
-  printf("  -s  --size <N>     Use workload size N (Default = 16)\n");
-  printf("  -l  --log          Print vector unit execution log\n");
-  printf("  -?  --help         This message\n");
+  printf("用法: %s [选项]\n", progname);
+  printf("程序选项:\n");
+  printf("  -s  --size <N>     使用大小为 N 的工作负载 (默认 = 16)\n");
+  printf("  -l  --log          输出 vector 单元执行日志\n");
+  printf("  -?  --help         显示本帮助信息\n");
 }
 
 void initValue(float* values, int* exponents, float* output, float* gold, unsigned int N) {
 
   for (unsigned int i=0; i<N+VECTOR_WIDTH; i++)
   {
-    // random input values
+    // 随机输入值
     values[i] = -1.f + 4.f * static_cast<float>(rand()) / RAND_MAX;
     exponents[i] = rand() % EXP_MAX;
     output[i] = 0.f;
@@ -135,8 +135,8 @@ bool verifyResult(float* values, int* exponents, float* output, float* gold, int
 
   if (incorrect != -1) {
     if (incorrect >= N)
-      printf("You have written to out of bound value!\n");
-    printf("Wrong calculation at value[%d]!\n", incorrect);
+      printf("你写入了越界的值!\n");
+    printf("在 value[%d] 处计算错误!\n", incorrect);
     printf("value  = ");
     for (int i=0; i<N; i++) {
       printf("% f ", values[i]);
@@ -158,12 +158,12 @@ bool verifyResult(float* values, int* exponents, float* output, float* gold, int
     } printf("\n");
     return false;
   }
-  printf("Results matched with answer!\n");
+  printf("计算结果与参考答案完全一致!\n");
   return true;
 }
 
-// computes the absolute value of all elements in the input array
-// values, stores result in output
+// 计算输入数组 values 中所有元素的绝对值，
+// 并把结果存入 output
 void absSerial(float* values, float* output, int N) {
   for (int i=0; i<N; i++) {
     float x = values[i];
@@ -176,49 +176,49 @@ void absSerial(float* values, float* output, int N) {
 }
 
 
-// implementation of absSerial() above, but it is vectorized using CS149 intrinsics
+// 上面 absSerial() 的实现版本，但使用 CS149 intrinsics 进行了向量化
 void absVector(float* values, float* output, int N) {
   __cs149_vec_float x;
   __cs149_vec_float result;
   __cs149_vec_float zero = _cs149_vset_float(0.f);
   __cs149_mask maskAll, maskIsNegative, maskIsNotNegative;
 
-//  Note: Take a careful look at this loop indexing.  This example
-//  code is not guaranteed to work when (N % VECTOR_WIDTH) != 0.
-//  Why is that the case?
+//  注意: 请仔细观察这段循环的下标方式。当 (N % VECTOR_WIDTH) != 0 时，
+//  这段示例代码并不保证能正确工作。
+//  这是为什么？
   for (int i=0; i<N; i+=VECTOR_WIDTH) {
 
-    // All ones
+    // 全 1
     maskAll = _cs149_init_ones();
 
-    // All zeros
+    // 全 0
     maskIsNegative = _cs149_init_ones(0);
 
-    // Load vector of values from contiguous memory addresses
+    // 从连续的内存地址中加载一个由值组成的 vector
     _cs149_vload_float(x, values+i, maskAll);               // x = values[i];
 
-    // Set mask according to predicate
+    // 根据谓词条件设置 mask
     _cs149_vlt_float(maskIsNegative, x, zero, maskAll);     // if (x < 0) {
 
-    // Execute instruction using mask ("if" clause)
+    // 使用 mask 执行指令（"if" 分支）
     _cs149_vsub_float(result, zero, x, maskIsNegative);      //   output[i] = -x;
 
-    // Inverse maskIsNegative to generate "else" mask
+    // 对 maskIsNegative 取反，生成 "else" 分支用的 mask
     maskIsNotNegative = _cs149_mask_not(maskIsNegative);     // } else {
 
-    // Execute instruction ("else" clause)
+    // 执行指令（"else" 分支）
     _cs149_vload_float(result, values+i, maskIsNotNegative); //   output[i] = x; }
 
-    // Write results back to memory
+    // 把结果写回内存
     _cs149_vstore_float(output+i, result, maskAll);
   }
 }
 
 
-// accepts an array of values and an array of exponents
+// 接收一个 values 数组和一个 exponents 数组
 //
-// For each element, compute values[i]^exponents[i] and clamp value to
-// 9.999.  Store result in output.
+// 对每个元素，计算 values[i]^exponents[i]，并把值 clamp（截断）到
+// 9.999。结果存入 output。
 void clampedExpSerial(float* values, int* exponents, float* output, int N) {
   for (int i=0; i<N; i++) {
     float x = values[i];
@@ -243,16 +243,16 @@ void clampedExpSerial(float* values, int* exponents, float* output, int N) {
 void clampedExpVector(float* values, int* exponents, float* output, int N) {
 
   //
-  // CS149 STUDENTS TODO: Implement your vectorized version of
-  // clampedExpSerial() here.
+  // CS149 学生 TODO: 在这里实现你的
+  // clampedExpSerial() 向量化版本。
   //
-  // Your solution should work for any value of
-  // N and VECTOR_WIDTH, not just when VECTOR_WIDTH divides N
+  // 你的解法应当对任意 N 和 VECTOR_WIDTH 都能工作，
+  // 而不只是 VECTOR_WIDTH 恰好整除 N 的情况
   //
   
 }
 
-// returns the sum of all elements in values
+// 返回 values 中所有元素的和
 float arraySumSerial(float* values, int N) {
   float sum = 0;
   for (int i=0; i<N; i++) {
@@ -262,13 +262,13 @@ float arraySumSerial(float* values, int N) {
   return sum;
 }
 
-// returns the sum of all elements in values
-// You can assume N is a multiple of VECTOR_WIDTH
-// You can assume VECTOR_WIDTH is a power of 2
+// 返回 values 中所有元素的和
+// 你可以假设 N 是 VECTOR_WIDTH 的倍数
+// 你可以假设 VECTOR_WIDTH 是 2 的幂
 float arraySumVector(float* values, int N) {
   
   //
-  // CS149 STUDENTS TODO: Implement your vectorized version of arraySumSerial here
+  // CS149 学生 TODO: 在这里实现 arraySumSerial 的向量化版本
   //
   
   for (int i=0; i<N; i+=VECTOR_WIDTH) {

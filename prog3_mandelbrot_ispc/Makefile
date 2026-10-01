@@ -1,8 +1,8 @@
 CXX=g++ -m64
 CXXFLAGS=-I../common -Iobjs/ -O3 -Wall -fPIC -ffp-contract=off
 ISPC=ispc
-# note: requires AVX2
-# disabling AVX2 FMA since it causes a difference in output compared to reference on Mandelbrot 
+# 注意：需要 AVX2
+# 禁用 AVX2 的 FMA，因为在 Mandelbrot 上它会导致输出与参考结果不一致 
 ISPCFLAGS=-O3 --target=avx2-i32x8 --arch=x86-64 --opt=disable-fma --pic
 
 APP_NAME=mandelbrot_ispc

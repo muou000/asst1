@@ -1,40 +1,33 @@
 /*
 
-  Note: This code was modified from example code
-  originally provided by Intel.  To comply with Intel's open source
-  licensing agreement, their copyright is retained below.
+  注：这段代码修改自 Intel 提供的示例代码。为遵守 Intel 的开源
+  许可协议，其版权声明保留在下方。
 
   -----------------------------------------------------------------
 
   Copyright (c) 2010-2011, Intel Corporation
-  All rights reserved.
+  版权所有。
 
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that the following conditions are
-  met:
+  在满足以下条件的前提下，允许以源代码和二进制形式重新分发和使用
+  本软件，无论是否对其进行修改：
 
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
+    * 以源代码形式重新分发时，必须保留上述版权声明、本条件清单
+      以及下面的免责声明。
 
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
+    * 以二进制形式重新分发时，必须在随分发包提供的文档和/或其他
+      材料中重现上述版权声明、本条件清单以及下面的免责声明。
 
-    * Neither the name of Intel Corporation nor the names of its
-      contributors may be used to endorse or promote products derived from
-      this software without specific prior written permission.
+    * 未经事先书面许可，不得使用 Intel Corporation 的名称或其
+      贡献者的名称来认可或推广由本软件派生的产品。
 
-   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-   TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-   PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
-   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-   EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+   本软件由版权持有者和贡献者"按原样"（AS IS）提供，不作出任何
+   明示或暗示的担保，包括但不限于对适销性和特定用途适用性的暗示
+   担保。在任何情况下，版权持有者或贡献者均不对任何直接的、间接
+   的、偶然的、特殊的、惩罚性的或后果性的损害（包括但不限于采购
+   替代商品或服务；使用、数据或利润的损失；或业务中断）承担责任，
+   无论该责任是如何引起的，也无论其责任理论是基于合同、严格责任
+   还是侵权行为（包括过失或其他原因），即使已被告知发生此类损害
+   的可能性。
 */
 
 
@@ -59,14 +52,12 @@ static inline int mandel(float c_re, float c_im, int count)
 //
 // MandelbrotSerial --
 //
-// Compute an image visualizing the mandelbrot set.  The resulting
-// array contains the number of iterations required before the complex
-// number corresponding to a pixel could be rejected from the set.
+// 计算一幅可视化 Mandelbrot 集合的图像。结果数组中保存的是：与某个
+// 像素对应的复数在能被判定不属于该集合（rejected）之前所需的迭代次数。
 //
-// * x0, y0, x1, y1 describe the complex coordinates mapping
-//   into the image viewport.
-// * width, height describe the size of the output image
-// * startRow, totalRows describe how much of the image to compute
+// * x0, y0, x1, y1 描述复平面坐标到图像视口（viewport）的映射关系。
+// * width, height 描述输出图像的尺寸。
+// * startRow, totalRows 描述要计算图像的哪一部分。
 void mandelbrotSerial(
     float x0, float y0, float x1, float y1,
     int width, int height,

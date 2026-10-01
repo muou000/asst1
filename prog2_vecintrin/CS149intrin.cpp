@@ -2,7 +2,7 @@
 #include "logger.h"
 
 //******************
-//* Implementation *
+//* 实现部分 *
 //******************
 
 __cs149_mask _cs149_init_ones(int first) {

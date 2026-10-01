@@ -17,19 +17,19 @@ void Logger::addLog(const char * instruction, __cs149_mask mask, int N) {
 }
 
 void Logger::printStats() {
-  printf("****************** Printing Vector Unit Statistics *******************\n");
-  printf("Vector Width:              %d\n", VECTOR_WIDTH);
-  printf("Total Vector Instructions: %lld\n", stats.total_instructions);
-  printf("Vector Utilization:        %.1f%%\n", (double)stats.utilized_lane/stats.total_lane*100);
-  printf("Utilized Vector Lanes:     %lld\n", stats.utilized_lane);
-  printf("Total Vector Lanes:        %lld\n", stats.total_lane);
+  printf("****************** 输出 Vector 单元统计信息 *******************\n");
+  printf("Vector 宽度:               %d\n", VECTOR_WIDTH);
+  printf("Vector 指令总数:           %lld\n", stats.total_instructions);
+  printf("Vector 利用率:             %.1f%%\n", (double)stats.utilized_lane/stats.total_lane*100);
+  printf("已用 Vector lane 数:       %lld\n", stats.utilized_lane);
+  printf("Vector lane 总数:          %lld\n", stats.total_lane);
 }
 
 
 
 void Logger::printLog() {
-  printf("***************** Printing Vector Unit Execution Log *****************\n");
-  printf(" Instruction | Vector Lane Occupancy ('*' for active, '_' for inactive)\n");
+  printf("***************** 输出 Vector 单元执行日志 *****************\n");
+  printf(" 指令        | Vector lane 占用情况 ('*' 表示激活, '_' 表示未激活)\n");
   printf("------------- --------------------------------------------------------\n");
   for (int i=0; i<log.size(); i++) {
     printf("%12s | ", log[i].instruction);

@@ -1,0 +1,10 @@
+**/__pycache__/**
+**/objs/**
+prog1_mandelbrot_threads/mandelbrot
+prog1_mandelbrot_threads/*.ppm
+*.o
+prog2_vecintrin/myexp
+prog3_mandelbrot_ispc/mandelbrot_ispc
+prog4_sqrt/sqrt
+prog5_saxpy/saxpy
+prog6_kmeans/kmeans

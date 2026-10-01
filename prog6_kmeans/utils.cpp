@@ -11,10 +11,10 @@ void logToFile(string filename, double sampleRate, double *data,
   ofstream logFile;
   logFile.open(filename);
 
-  // Write header
+  // 写入文件头
   logFile << M << "," << N << "," << K << endl;
 
-  // Log data points
+  // 记录数据点
   for (int m = 0; m < M; m++) {
     if (static_cast<double>(rand()) / static_cast<double>(RAND_MAX) <
         sampleRate) {
@@ -27,7 +27,7 @@ void logToFile(string filename, double sampleRate, double *data,
     }
   }
 
-  // Log centroids
+  // 记录各 centroid
   for (int k = 0; k < K; k++) {
     logFile << "Centroid " << k << ": ";
     for (int n = 0; n < N; n++) {
@@ -60,11 +60,11 @@ void writeData(string filename, double *data, double *clusterCentroids,
 void readData(string filename, double **data, double **clusterCentroids,
               int **clusterAssignments, int *M_p, int *N_p, int *K_p,
               double *epsilon_p) {
-  cout << "Reading data.dat..." << endl;
+  cout << "正在读取 data.dat..." << endl;
 
   ifstream dataFile(filename, ios::in | ios::binary);
   if (dataFile.fail()) {
-      cout << "Couldn't open the file! Please make sure data.dat exists... Exiting." << endl;
+      cout << "无法打开文件！请确认 data.dat 存在……程序退出。" << endl;
       exit(EXIT_FAILURE);
   }
 

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <cstdlib>
 #include <thread>
 
 #include "CycleTimer.h"
@@ -26,23 +27,22 @@ extern void mandelbrotSerial(
 //
 // workerThreadStart --
 //
-// Thread entrypoint.
+// thread 的入口函数。
 void workerThreadStart(WorkerArgs * const args) {
 
-    // TODO FOR CS149 STUDENTS: Implement the body of the worker
-    // thread here. Each thread should make a call to mandelbrotSerial()
-    // to compute a part of the output image.  For example, in a
-    // program that uses two threads, thread 0 could compute the top
-    // half of the image and thread 1 could compute the bottom half.
+    // TODO FOR CS149 学生：在这里实现 worker thread 的函数体。每个
+    // thread 都应调用 mandelbrotSerial() 来计算输出图像的一部分。
+    // 例如，在一个使用两个 thread 的程序中，thread 0 可以计算图像的
+    // 上半部分，thread 1 计算图像的下半部分。
 
-    printf("Hello world from thread %d\n", args->threadId);
+    printf("来自 thread %d 的 Hello world\n", args->threadId);
 }
 
 //
 // MandelbrotThread --
 //
-// Multi-threaded implementation of mandelbrot set image generation.
-// Threads of execution are created by spawning std::threads.
+// Mandelbrot 集图像生成的多 thread 实现。
+// 各个执行流（thread）通过创建 std::thread 来产生。
 void mandelbrotThread(
     int numThreads,
     float x0, float y0, float x1, float y1,
@@ -53,19 +53,17 @@ void mandelbrotThread(
 
     if (numThreads > MAX_THREADS)
     {
-        fprintf(stderr, "Error: Max allowed threads is %d\n", MAX_THREADS);
+        fprintf(stderr, "错误: 允许的最大 thread 数为 %d\n", MAX_THREADS);
         exit(1);
     }
 
-    // Creates thread objects that do not yet represent a thread.
+    // 创建一些尚不代表任何 thread 的 thread 对象。
     std::thread workers[MAX_THREADS];
     WorkerArgs args[MAX_THREADS];
 
     for (int i=0; i<numThreads; i++) {
-      
-        // TODO FOR CS149 STUDENTS: You may or may not wish to modify
-        // the per-thread arguments here.  The code below copies the
-        // same arguments for each thread
+        // TODO FOR CS149 学生：你可能需要、也可能不需要修改这里每个
+        // thread 的参数。下面的代码为每个 thread 复制了相同的参数
         args[i].x0 = x0;
         args[i].y0 = y0;
         args[i].x1 = x1;
@@ -75,20 +73,19 @@ void mandelbrotThread(
         args[i].maxIterations = maxIterations;
         args[i].numThreads = numThreads;
         args[i].output = output;
-      
+
         args[i].threadId = i;
     }
 
-    // Spawn the worker threads.  Note that only numThreads-1 std::threads
-    // are created and the main application thread is used as a worker
-    // as well.
+    // 创建（spawn）各个 worker thread。注意这里只创建了 numThreads-1 个
+    // std::thread，应用程序的主 thread 本身也充当一个 worker。
     for (int i=1; i<numThreads; i++) {
         workers[i] = std::thread(workerThreadStart, &args[i]);
     }
-    
+
     workerThreadStart(&args[0]);
 
-    // join worker threads
+    // join（等待完成）各个 worker thread
     for (int i=1; i<numThreads; i++) {
         workers[i].join();
     }

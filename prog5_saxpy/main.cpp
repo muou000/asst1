@@ -7,7 +7,7 @@
 extern void saxpySerial(int N, float a, float* X, float* Y, float* result);
 
 
-// return GB/s
+// 返回 GB/s
 static float
 toBW(int bytes, float sec) {
     return static_cast<float>(bytes) / (1024. * 1024. * 1024.) / sec;
@@ -21,7 +21,7 @@ toGFLOPS(int ops, float sec) {
 static void verifyResult(int N, float* result, float* gold) {
     for (int i=0; i<N; i++) {
         if (result[i] != gold[i]) {
-            printf("Error: [%d] Got %f expected %f\n", i, result[i], gold[i]);
+            printf("错误: [%d] 得到 %f，期望 %f\n", i, result[i], gold[i]);
         }
     }
 }
@@ -31,7 +31,7 @@ using namespace ispc;
 
 int main() {
 
-    const unsigned int N = 20 * 1000 * 1000; // 20 M element vectors (~80 MB)
+    const unsigned int N = 20 * 1000 * 1000; // 2000 万个元素的向量（约 80 MB）
     const unsigned int TOTAL_BYTES = 4 * N * sizeof(float);
     const unsigned int TOTAL_FLOPS = 2 * N;
 
@@ -43,7 +43,7 @@ int main() {
     float* resultISPC = new float[N];
     float* resultTasks = new float[N];
 
-    // initialize array values
+    // 初始化数组取值
     for (unsigned int i=0; i<N; i++)
     {
         arrayX[i] = i;
@@ -54,8 +54,8 @@ int main() {
     }
 
     //
-    // Run the serial implementation. Repeat three times for robust
-    // timing.
+    // 运行串行实现。重复三次运行，
+    // 以保证计时结果的稳定性。
     //
     double minSerial = 1e30;
     for (int i = 0; i < 3; ++i) {
@@ -71,7 +71,7 @@ int main() {
     //       toGFLOPS(TOTAL_FLOPS, minSerial));
 
     //
-    // Run the ISPC (single core) implementation
+    // 运行 ISPC（单核）实现
     //
     double minISPC = 1e30;
     for (int i = 0; i < 3; ++i) {
@@ -89,7 +89,7 @@ int main() {
            toGFLOPS(TOTAL_FLOPS, minISPC));
 
     //
-    // Run the ISPC (multi-core) implementation
+    // 运行 ISPC（多核）实现
     //
     double minTaskISPC = 1e30;
     for (int i = 0; i < 3; ++i) {
@@ -106,7 +106,7 @@ int main() {
            toBW(TOTAL_BYTES, minTaskISPC),
            toGFLOPS(TOTAL_FLOPS, minTaskISPC));
 
-    printf("\t\t\t\t(%.2fx speedup from use of tasks)\n", minISPC/minTaskISPC);
+    printf("\t\t\t\t(使用 task 带来 %.2fx 的加速)\n", minISPC/minTaskISPC);
     //printf("\t\t\t\t(%.2fx speedup from ISPC)\n", minSerial/minISPC);
     //printf("\t\t\t\t(%.2fx speedup from task ISPC)\n", minSerial/minTaskISPC);
 

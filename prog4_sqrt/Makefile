@@ -1,7 +1,7 @@
 CXX=g++ -m64 -march=native
 CXXFLAGS=-I../common -Iobjs/ -O3 -Wall
 ISPC=ispc
-# note: requires AVX2 capable machine
+# 注意：需要一台支持 AVX2 的机器
 ISPCFLAGS=-O3 --target=avx2-i32x8 --arch=x86-64 --pic
 
 

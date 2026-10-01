@@ -31,7 +31,7 @@ bool verifyResult (int *gold, int *result, int width, int height) {
     for (i = 0; i < height; i++) {
         for (j = 0; j < width; j++) {
             if (gold[i * width + j] != result[i * width + j]) {
-                printf ("Mismatch : [%d][%d], Expected : %d, Actual : %d\n",
+                printf ("不匹配 : [%d][%d]，期望 : %d，实际 : %d\n",
                             i, j, gold[i * width + j], result[i * width + j]);
                 return 0;
             }
@@ -61,11 +61,11 @@ scaleAndShift(float& x0, float& x1, float& y0, float& y1,
 using namespace ispc;
 
 void usage(const char* progname) {
-    printf("Usage: %s [options]\n", progname);
-    printf("Program Options:\n");
-    printf("  -t  --tasks        Run ISPC code implementation with tasks\n");
-    printf("  -v  --view <INT>   Use specified view settings\n");
-    printf("  -?  --help         This message\n");
+    printf("用法: %s [选项]\n", progname);
+    printf("程序选项:\n");
+    printf("  -t  --tasks        以 task 方式运行 ISPC 代码实现\n");
+    printf("  -v  --view <INT>   使用指定的视图设置\n");
+    printf("  -?  --help         显示本帮助信息\n");
 }
 
 
@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 
     bool useTasks = false;
 
-    // parse commandline options ////////////////////////////////////////////
+    // 解析命令行选项 ////////////////////////////////////////////
     int opt;
     static struct option long_options[] = {
         {"tasks", 0, 0, 't'},
@@ -100,14 +100,14 @@ int main(int argc, char** argv) {
         case 'v':
         {
             int viewIndex = atoi(optarg);
-            // change view settings
+            // 更改视图设置
             if (viewIndex == 2) {
                 float scaleValue = .015f;
                 float shiftX = -.986f;
                 float shiftY = .30f;
                 scaleAndShift(x0, x1, y0, y1, scaleValue, shiftX, shiftY);
             } else if (viewIndex > 1) {
-                fprintf(stderr, "Invalid view index\n");
+                fprintf(stderr, "无效的视图编号\n");
                 return 1;
             }
             break;
@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
-    // end parsing of commandline options
+    // 命令行选项解析结束
 
     int *output_serial = new int[width*height];
     int *output_ispc = new int[width*height];
@@ -128,8 +128,8 @@ int main(int argc, char** argv) {
         output_serial[i] = 0;
 
     //
-    // Run the serial implementation. Teport the minimum time of three
-    // runs for robust timing.
+    // 运行串行实现。报告三次运行中的最小时间，
+    // 以保证计时结果的稳定性。
     //
     double minSerial = 1e30;
     for (int i = 0; i < 3; ++i) {
@@ -139,15 +139,15 @@ int main(int argc, char** argv) {
         minSerial = std::min(minSerial, endTime - startTime);
     }
 
-    printf("[mandelbrot serial]:\t\t[%.3f] ms\n", minSerial * 1000);
+    printf("[mandelbrot 串行]:\t\t[%.3f] ms\n", minSerial * 1000);
     writePPMImage(output_serial, width, height, "mandelbrot-serial.ppm", maxIterations);
 
-    // Clear out the buffer
+    // 清空缓冲区
     for (unsigned int i = 0; i < width * height; ++i)
         output_ispc[i] = 0;
 
     //
-    // Compute the image using the ispc implementation
+    // 使用 ispc 实现计算图像
     //
     double minISPC = 1e30;
     for (int i = 0; i < 3; ++i) {
@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
 
 
     if (! verifyResult (output_serial, output_ispc, width, height)) {
-        printf ("Error : ISPC output differs from sequential output\n");
+        printf ("错误 : ISPC 输出与串行输出不一致\n");
 
         delete[] output_serial;
         delete[] output_ispc;
@@ -171,7 +171,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // Clear out the buffer
+    // 清空缓冲区
     for (unsigned int i = 0; i < width * height; ++i) {
         output_ispc_tasks[i] = 0;
     }
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
     double minTaskISPC = 1e30;
     if (useTasks) {
         //
-        // Tasking version of the ISPC code
+        // ISPC 代码的 task 版本
         //
         for (int i = 0; i < 3; ++i) {
             double startTime = CycleTimer::currentSeconds();
@@ -188,18 +188,18 @@ int main(int argc, char** argv) {
             minTaskISPC = std::min(minTaskISPC, endTime - startTime);
         }
 
-        printf("[mandelbrot multicore ispc]:\t[%.3f] ms\n", minTaskISPC * 1000);
+        printf("[mandelbrot 多核 ispc]:\t[%.3f] ms\n", minTaskISPC * 1000);
         writePPMImage(output_ispc_tasks, width, height, "mandelbrot-task-ispc.ppm", maxIterations);
 
         if (! verifyResult (output_serial, output_ispc_tasks, width, height)) {
-            printf ("Error : ISPC output differs from sequential output\n");
+            printf ("错误 : ISPC 输出与串行输出不一致\n");
             return 1;
         }
     }
 
-    printf("\t\t\t\t(%.2fx speedup from ISPC)\n", minSerial/minISPC);
+    printf("\t\t\t\t(ISPC 带来 %.2fx 的加速)\n", minSerial/minISPC);
     if (useTasks) {
-        printf("\t\t\t\t(%.2fx speedup from task ISPC)\n", minSerial/minTaskISPC);
+        printf("\t\t\t\t(task ISPC 带来 %.2fx 的加速)\n", minSerial/minTaskISPC);
     }
 
     delete[] output_serial;

@@ -35,7 +35,7 @@ export void mandelbrot_ispc(uniform float x0, uniform float y0,
     }
 }
 
-// slightly different kernel to support tasking
+// 为支持 task 而稍作改动的内核
 task void mandelbrot_ispc_task(uniform float x0, uniform float y0, 
                                uniform float x1, uniform float y1,
                                uniform int width, uniform int height,
@@ -44,7 +44,7 @@ task void mandelbrot_ispc_task(uniform float x0, uniform float y0,
                                uniform int output[])
 {
 
-    // taskIndex is an ISPC built-in
+    // taskIndex 是 ISPC 的内置变量
     
     uniform int ystart = taskIndex * rowsPerTask;
     uniform int yend = ystart + rowsPerTask;
@@ -70,7 +70,7 @@ export void mandelbrot_ispc_withtasks(uniform float x0, uniform float y0,
 
     uniform int rowsPerTask = height / 2;
 
-    // create 2 tasks
+    // 创建 2 个 task
     launch[2] mandelbrot_ispc_task(x0, y0, x1, y1,
                                      width, height,
                                      rowsPerTask,

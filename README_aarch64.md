@@ -1,188 +1,106 @@
-# Assignment 1: Performance Analysis on a Quad-Core CPU #
+# 作业 1：四核 CPU 上的性能分析 #
 
-**Due Fri Oct 3, 11:59pm**
+**截止时间：10 月 3 日（周五）晚上 11:59**
 
-**100 points total + 6 points extra credit**
+**总分 100 分 + 6 分附加分（extra credit）**
 
-## Overview ##
+## 概述 ##
 
-This assignment is intended to help you develop an understanding of the two primary forms of parallel execution present in a modern multi-core CPU:
+本次作业旨在帮助你理解现代多核 CPU 中两种主要的并行执行形式：
 
-1. SIMD execution within a single processing core
-2. Parallel execution using multiple cores (You'll see effects of Intel Hyper-threading as well.)
+1. 单个处理核心内部的 SIMD 执行
+2. 使用多个核心的并行执行（你还会观察到 Intel 超线程（Hyper-Threading）带来的影响。）
 
-You will also gain experience measuring and reasoning about the
-performance of parallel programs (a challenging, but important, skill you will
-use throughout this class). This assignment involves only a small amount of
-programming, but a lot of analysis!
+你还将积累测量并推理并行程序性能的经验（这是一项有挑战性但很重要的技能，本课程自始至终都会用到）。本次作业只涉及少量编程，但需要大量的分析！
 
-__Note: Running on Arm is optional and not counted for credit.__
+__注意：在 Arm 上运行是可选的，不计入分数。__
 
-## Environment Setup ##
+## 环境配置 ##
 
-__You will need to run code on an Arm based machine, such as an M-series Mac.__
+__你需要在基于 Arm 的机器上运行代码，例如 M 系列的 Mac。__
 
-Note: You will first need to install the Intel SPMD Program Compiler (ISPC) available here: <http://ispc.github.io/.>
+注意：你首先需要安装 Intel SPMD 程序编译器（ISPC），下载地址：<http://ispc.github.io/.>
 
-To get started:
+开始上手：
 
-1. ISPC is needed to compile many of the programs used in this assignment. ISPC can be easily installed on the myth machines through the following steps:  
+1. 本作业中用到的许多程序都需要 ISPC 来编译。在 myth 机器上可以通过以下步骤轻松安装 ISPC：  
 
-Download the linux binary into a local directory of your choice. You can get ISPC compiler binaries for Linux from the ISPC [downloads page](https://ispc.github.io/downloads.html). For macOS, we recommend you use `curl` or `wget` (if not found, a quick Google search can provide information on how to get these tools locally) to directly download the binary from the downloads page. As of Fall 2025 Week 1, the `wget` line below works:
+把 Linux 二进制文件下载到你选择的本地目录。你可以从 ISPC 的[下载页面](https://ispc.github.io/downloads.html)获取适用于 Linux 的 ISPC 编译器二进制文件。在 macOS 上，我们建议你使用 `curl` 或 `wget`（如果找不到这些工具，用 Google 快速搜索一下就能找到在本地获取它们的方法）直接从下载页面下载二进制文件。截至 2025 年秋季学期第 1 周，下面这条 `wget` 命令可用：
 
 
     wget https://github.com/ispc/ispc/releases/download/v1.28.1/ispc-v1.28.1-MacOS.tar.gz
 
-Untar the downloaded file: `tar -xvf ispc-v1.28.1-MacOS.tar.gz`
+解压下载得到的文件：`tar -xvf ispc-v1.28.1-MacOS.tar.gz`
 
-Add the ISPC `bin` directory to your system path.  For example, if untarring the downloaded file produces the directory `~/Downloads/ispc-v1.28.1-MacOS`, in bash you'd update your path variable with:
+把 ISPC 的 `bin` 目录加入你的系统路径（PATH）。例如，如果解压后得到的目录是 `~/Downloads/ispc-v1.28.1-MacOS`，在 bash 中你可以这样更新路径变量：
+
 
     export PATH=$PATH:${HOME}/Downloads/ispc-v1.28.1-MacOS/bin
 
 
-The above line can be added to your `.bashrc` file for permanence.
+上面这行命令可以写进你的 `.bashrc` 文件以永久生效。
 
-2. The assignment starter code is available on <https://github.com/stanford-cs149/asst1>. Please clone the Assignment 1 starter code using:
+2. 作业起始代码（starter code）位于 <https://github.com/stanford-cs149/asst1>。请使用以下命令克隆作业 1 的起始代码：
 
     `git clone https://github.com/stanford-cs149/asst1.git`
 
-## Program 1: Parallel Fractal Generation Using Threads (20 points) ##
+## 程序 1：使用线程进行并行分形生成（20 分） ##
 
-Build and run the code in the `prog1_mandelbrot_threads/` directory of
-the code base. (Type `make` to build, and `./mandelbrot` to run it.)
-This program produces the image file `mandelbrot-serial.ppm`, which is a visualization of a famous set of
-complex numbers called the Mandelbrot set. As you can see in the images below, the
-result is a familiar and beautiful fractal.  Each pixel in the image
-corresponds to a value in the complex plane, and the brightness of
-each pixel is proportional to the computational cost of determining
-whether the value is contained in the Mandelbrot set. To get image 2,
-use the command option `--view 2`.  (See function `mandelbrotSerial()`
-defined in `mandelbrotSerial.cpp`). You can learn more about the
-definition of the Mandelbrot set at
-<http://en.wikipedia.org/wiki/Mandelbrot_set>.
+编译并运行代码库中 `prog1_mandelbrot_threads/` 目录下的代码。（输入 `make` 进行编译，输入 `./mandelbrot` 运行。）该程序会生成图像文件 `mandelbrot-serial.ppm`，它是著名复数集合 Mandelbrot 集（Mandelbrot set）的可视化。正如你在下面的图像中所看到的，结果是一个大家熟悉的美丽分形。图像中的每个像素对应复平面上的一个值，每个像素的亮度与判断该值是否属于 Mandelbrot 集所需的计算开销成正比。要得到图像 2，使用命令选项 `--view 2`。（参见 `mandelbrotSerial.cpp` 中定义的函数 `mandelbrotSerial()`。）你可以在 <http://en.wikipedia.org/wiki/Mandelbrot_set> 进一步了解 Mandelbrot 集的定义。
 
 
-![Mandelbrot Set](handout-images/mandelbrot_viz.jpg "A visualization of two views of the Mandelbrot set. The cost of computing each pixel is proportional to its brightness. When running programs 1 and 3, you can use the command line option `--view 2` to set output to be view 2.")
+![Mandelbrot 集](handout-images/mandelbrot_viz.jpg "Mandelbrot 集两个视图的可视化。计算每个像素的开销与其亮度成正比。运行程序 1 和程序 3 时，可以使用命令行选项 `--view 2` 将输出设为视图 2。")
 
-Your job is to parallelize the computation of the images using 
-[std::thread](https://en.cppreference.com/w/cpp/thread/thread). Starter
-code that spawns one additional thread is provided in the function
-`mandelbrotThread()` located in `mandelbrotThread.cpp`. In this function, the
-main application thread creates another additional thread using the constructor
-`std::thread(function, args...)` It waits for this thread to complete by calling
-`join` on the thread object.
-Currently the launched thread does not do any computation and returns immediately.
-You should add code to `workerThreadStart` function to accomplish this task.
-You will not need to make use of any other std::thread API calls in this assignment.
+你的任务是使用 [std::thread](https://en.cppreference.com/w/cpp/thread/thread) 对图像计算进行并行化。起始代码在 `mandelbrotThread.cpp` 中的函数 `mandelbrotThread()` 里提供了启动一个额外线程的示例。在这个函数中，主应用程序线程使用构造函数 `std::thread(function, args...)` 创建另一个额外的线程，并通过在该线程对象上调用 `join` 来等待它完成。目前被启动的线程不做任何计算并立即返回。你应当在 `workerThreadStart` 函数中添加代码来完成这个任务。本次作业中你不需要使用任何其他 std::thread API 调用。
 
-**What you need to do:**
+**你需要做的事情：**
 
-1.  Modify the starter code to parallelize the Mandelbrot generation using 
- two processors. Specifically, compute the top half of the image in
-  thread 0, and the bottom half of the image in thread 1. This type
-    of problem decomposition is referred to as _spatial decomposition_ since
-  different spatial regions of the image are computed by different processors.
-2.  Extend your code to use 2 to the number of (performance CPU cores on your Mac or) machine threads, partitioning the image
-  generation work accordingly (threads should get blocks of the image). In your writeup hypothesize why this is (or is not) the case? (you may also wish to produce a graph __for VIEW 2__ to help you come up with a good answer. Hint: take a careful look at the three-thread datapoint.)
-3.  To confirm (or disprove) your hypothesis, measure the amount of time
-  each thread requires to complete its work by inserting timing code at
-  the beginning and end of `workerThreadStart()`. How do your measurements
-  explain the speedup graph you previously created?
-4.  Modify the mapping of work to threads to improve speedup as much as possible on the Mandelbrot set. 
-  You may not use any
-  synchronization between threads in your solution. We are expecting you to come up with a single work decomposition policy that will work well for all thread counts---hard coding a solution specific to each configuration is not allowed! (Hint: There is a very simple static
-  assignment that will achieve this goal, and no communication/synchronization
-  among threads is necessary.). In your writeup, describe your approach to parallelization
-  and report the final 8-thread speedup obtained with the same number of threads as the number of performance CPU cores your machine has. 
-5. Now run your improved code with 2 * (number of performance CPU cores on your) machine threads. Is performance noticably greater than when running with eight threads? Why or why not? 
+1.  修改起始代码，使用两个处理器对 Mandelbrot 生成进行并行化。具体地说，由线程 0 计算图像的上半部分，由线程 1 计算图像的下半部分。这种问题分解方式被称为_空间分解（spatial decomposition）_，因为图像的不同空间区域由不同的处理器计算。
+2.  将你的代码扩展为使用从 2 到（你 Mac 上的性能 CPU 核心数，或）机器线程数之间的线程数量，并相应地划分图像生成工作（线程应当分到图像的块）。在你的报告中推测为什么会（或不会）出现这种情况？（你也可以为 __VIEW 2__ 画一张图来帮助自己得出一个好的答案。提示：仔细观察三个线程的数据点。）
+3.  为了证实（或推翻）你的假设，在 `workerThreadStart()` 的开头和结尾插入计时代码，测量每个线程完成其工作所需的时间。你的测量结果如何解释你之前画出的加速比曲线图？
+4.  修改工作到线程的映射方式，尽可能提高在 Mandelbrot 集上的加速比。你的解决方案中不得在线程之间使用任何同步机制。我们期望你提出一种对所有线程数都能良好工作的单一工作分解策略——不允许针对每种配置硬编码专门的解决方案！（提示：存在一种非常简单的静态分配方式可以实现这个目标，而且线程之间不需要任何通信/同步。）在你的报告中，描述你的并行化方法，并报告最终获得的 8 线程加速比（使用与你机器上性能 CPU 核心数相同的线程数）。
+5.  现在用 2 *（你机器上的性能 CPU 核心数）个机器线程运行你改进后的代码。性能是否明显高于使用 8 个线程运行时？为什么是或为什么不是？
   
-## Program 2: Vectorizing Code Using SIMD Intrinsics (20 points) ##
+## 程序 2：使用 SIMD 内建函数（intrinsics）向量化代码（20 分） ##
 
-Take a look at the function `clampedExpSerial` in `prog2_vecintrin/main.cpp` of the
-Assignment 1 code base.  The `clampedExp()` function raises `values[i]` to the power given by `exponents[i]` for all elements of the input array and clamps the resulting values at 9.999999.  In program 2, your job is to vectorize this piece of code so it can be run on a machine with SIMD vector instructions.
+查看作业 1 代码库中 `prog2_vecintrin/main.cpp` 里的函数 `clampedExpSerial`。函数 `clampedExp()` 对输入数组的所有元素计算 `values[i]` 的 `exponents[i]` 次幂，并把结果值钳制（clamp）在 9.999999。在程序 2 中，你的任务是把这段代码向量化，使它能够在配备 SIMD 向量指令的机器上运行。
 
-However, rather than craft an implementation using SSE or AVX2 vector intrinsics or Neon vector intrinsics that map to real SIMD vector instructions on modern CPUs, to make things a little easier, we're asking you to implement your version using CS149's "fake vector intrinsics" defined in `CS149intrin.h`.   The `CS149intrin.h` library provides you with a set of vector instructions that operate
-on vector values and/or vector masks. (These functions don't translate to real CPU vector instructions, instead we simulate these operations for you in our library, and provide feedback that makes for easier debugging.)  As an example of using the CS149 intrinsics, a vectorized version of the `abs()` function is given in `main.cpp`. This example contains some basic vector loads and stores and manipulates mask registers.  Note that the `abs()` example is only a simple example, and in fact the code does not correctly handle all inputs! (We will let you figure out why!) You may wish to read through all the comments and function definitions in `CS149intrin.h` to know what operations are available to you. 
+然而，为了让事情简单一点，我们并不要求你使用能映射到现代 CPU 真实 SIMD 向量指令的 SSE、AVX2 向量内建函数或 Neon 向量内建函数来编写实现，而是要求你使用 `CS149intrin.h` 中定义的 CS149"伪向量内建函数（fake vector intrinsics）"来实现你的版本。`CS149intrin.h` 库为你提供了一组作用于向量值和/或向量掩码（mask）的向量指令。（这些函数并不会翻译成真实的 CPU 向量指令，我们会在库中为你模拟这些操作，并提供便于调试的反馈信息。）作为使用 CS149 内建函数的示例，`main.cpp` 中给出了 `abs()` 函数的一个向量化版本。该示例包含一些基本的向量加载（load）与存储（store）操作，并对掩码寄存器进行操作。注意，`abs()` 示例只是一个简单示例，实际上它并不能正确处理所有输入！（我们让你自己去弄清楚原因！）建议你通读 `CS149intrin.h` 中的全部注释和函数定义，了解有哪些操作可用。
 
-Here are few hints to help you in your implementation:
+以下是一些帮助你实现的提示：
 
--  Every vector instruction is subject to an optional mask parameter.  The mask parameter defines which lanes whose output is "masked" for this operation. A 0 in the mask indicates a lane is masked, and so its value will not be overwritten by the results of the vector operation. If no mask is specified in the operation, no lanes are masked. (Note this equivalent to providing a mask of all ones.) 
-   *Hint:* Your solution will need to use multiple mask registers and various mask operations provided in the library.
--  *Hint:* Use `_cs149_cntbits` function helpful in this problem.
--  Consider what might happen if the total number of loop iterations is not a multiple of SIMD vector width. We suggest you test 
-your code with `./myexp -s 3`. *Hint:* You might find `_cs149_init_ones` helpful.
--  *Hint:* Use `./myexp -l` to print a log of executed vector instruction at the end. 
-Use function `addUserLog()` to add customized debug information in log. Feel free to add additional 
-`CS149Logger.printLog()` to help you debug.
+-  每条向量指令都可以带一个可选的掩码（mask）参数。掩码参数定义了本次操作中哪些通道（lane）的输出会被"屏蔽"。掩码中的 0 表示该通道被屏蔽，因此它的值不会被向量操作的结果覆盖。如果操作中没有指定掩码，则没有任何通道被屏蔽。（注意这等价于提供一个全 1 的掩码。）
+   *提示：* 你的解决方案需要使用多个掩码寄存器以及库中提供的各种掩码操作。
+-  *提示：* 你会发现 `_cs149_cntbits` 函数在本题中很有用。
+-  想一想，如果循环总迭代次数不是 SIMD 向量宽度的整数倍，会发生什么。我们建议你用 `./myexp -s 3` 测试你的代码。*提示：* 你可能会发现 `_cs149_init_ones` 很有用。
+-  *提示：* 使用 `./myexp -l` 在结束时打印已执行向量指令的日志。可以使用函数 `addUserLog()` 在日志中添加自定义调试信息。也可以随意添加额外的 `CS149Logger.printLog()` 来帮助你调试。
 
-The output of the program will tell you if your implementation generates correct output. If there
-are incorrect results, the program will print the first one it finds and print out a table of
-function inputs and outputs. Your function's output is after "output = ", which should match with 
-the results after "gold = ". The program also prints out a list of statistics describing utilization of the CS149 fake vector
-units. You should consider the performance of your implementation to be the value "Total Vector 
-Instructions". (You can assume every CS149 fake vector instruction takes one cycle on the CS149 fake SIMD CPU.) "Vector Utilization" 
-shows the percentage of vector lanes that are enabled. 
+程序的输出会告诉你你的实现是否生成了正确的结果。如果有错误结果，程序会打印它找到的第一个错误，并打印一张函数输入与输出的表格。你的函数输出位于 "output = " 之后，它应当与 "gold = " 之后的结果相匹配。程序还会打印出一组统计信息，描述 CS149 伪向量单元的利用率。你应当把 "Total Vector Instructions"（向量指令总数）的值视为你实现的性能指标。（你可以假定在 CS149 伪 SIMD CPU 上，每条 CS149 伪向量指令花费一个周期。）"Vector Utilization"（向量利用率）显示被启用的向量通道所占的百分比。
 
-**What you need to do:**
+**你需要做的事情：**
 
-1.  Implement a vectorized version of `clampedExpSerial` in `clampedExpVector` . Your implementation 
-should work with any combination of input array size (`N`) and vector width (`VECTOR_WIDTH`). 
-2.  Run `./myexp -s 10000` and sweep the vector width from 2, 4, 8, to 16. Record the resulting vector 
-utilization. You can do this by changing the `#define VECTOR_WIDTH` value in `CS149intrin.h`. 
-Does the vector utilization increase, decrease or stay the same as `VECTOR_WIDTH` changes? Why?
-3.  _Extra credit: (1 point)_ Implement a vectorized version of `arraySumSerial` in `arraySumVector`. Your implementation may assume that `VECTOR_WIDTH` is a factor of the input array size `N`. Whereas the serial implementation runs in `O(N)` time, your implementation should aim for runtime of `(N / VECTOR_WIDTH + VECTOR_WIDTH)` or even `(N / VECTOR_WIDTH + log2(VECTOR_WIDTH))`  You may find the `hadd` and `interleave` operations useful.
+1.  在 `clampedExpVector` 中实现 `clampedExpSerial` 的向量化版本。你的实现应当对输入数组大小（`N`）和向量宽度（`VECTOR_WIDTH`）的任意组合都能正常工作。
+2.  运行 `./myexp -s 10000`，并把向量宽度从 2、4、8 一路扫到 16。记录得到的向量利用率。你可以通过修改 `CS149intrin.h` 中的 `#define VECTOR_WIDTH` 值来做到这一点。随着 `VECTOR_WIDTH` 的变化，向量利用率是升高、降低还是保持不变？为什么？
+3.  _附加分：（1 分）_ 在 `arraySumVector` 中实现 `arraySumSerial` 的向量化版本。你的实现可以假定 `VECTOR_WIDTH` 是输入数组大小 `N` 的因子。串行实现的运行时间为 `O(N)`，而你的实现应当以 `(N / VECTOR_WIDTH + VECTOR_WIDTH)` 甚至 `(N / VECTOR_WIDTH + log2(VECTOR_WIDTH))` 的运行时间为目标。你可能会发现 `hadd` 和 `interleave` 操作很有用。
 
-## Program 3: Parallel Fractal Generation Using ISPC (20 points) ##
+## 程序 3：使用 ISPC 进行并行分形生成（20 分） ##
 
-Now that you're comfortable with SIMD execution, we'll return to parallel Mandelbrot fractal generation (like in program 1). Like Program 1, Program 3 computes a mandelbrot fractal image, but it achieves even greater speedups by utilizing both the CPU's four cores and the SIMD execution units within each core.
+既然你已经熟悉了 SIMD 执行，我们就回到并行的 Mandelbrot 分形生成（与程序 1 类似）。与程序 1 一样，程序 3 也计算 Mandelbrot 分形图像，但它同时利用 CPU 的四个核心以及每个核心内部的 SIMD 执行单元，从而获得更高的加速比。
 
-In Program 1, you parallelized image generation by creating one thread
-for each processing core in the system. Then, you assigned parts of
-the computation to each of these concurrently executing
-threads. (Since threads were one-to-one with processing cores in
-Program 1, you effectively assigned work explicitly to cores.) Instead
-of specifying a specific mapping of computations to concurrently
-executing threads, Program 3 uses ISPC language constructs to describe
-*independent computations*. These computations may be executed in
-parallel without violating program correctness (and indeed they
-will!). In the case of the Mandelbrot image, computing the value of
-each pixel is an independent computation. With this information, the
-ISPC compiler and runtime system take on the responsibility of
-generating a program that utilizes the CPU's collection of parallel
-execution resources as efficiently as possible.
+在程序 1 中，你通过为系统中的每个处理核心创建一个线程来并行化图像生成，然后把计算的各个部分分配给这些并发执行的线程。（由于程序 1 中线程与处理核心一一对应，你实际上是在显式地把工作分配给各个核心。）程序 3 不再指定计算到并发执行线程的具体映射，而是使用 ISPC 语言结构来描述*相互独立的计算*。这些计算可以并行执行而不会破坏程序正确性（而且它们确实会被并行执行！）。就 Mandelbrot 图像而言，计算每个像素的值就是一项独立的计算。有了这些信息，ISPC 编译器和运行时系统就承担起生成程序的责任，尽可能高效地利用 CPU 拥有的全部并行执行资源。
 
-You will make a simple fix to Program 3 which is written in a combination of
-C++ and ISPC (the error causes a performance problem, not a correctness one).
-With the correct fix, you should observe performance that is over 32 times
-greater than that of the original sequential Mandelbrot implementation from
-`mandelbrotSerial()`.
+你将对程序 3 做一个简单的修复，它是用 C++ 和 ISPC 混合编写的（这个错误导致的是性能问题，而不是正确性问题）。修复正确之后，你应当观察到性能超过 `mandelbrotSerial()` 原始串行 Mandelbrot 实现的 32 倍。
 
 
-### Program 3, Part 1. A Few ISPC Basics (10 of 20 points) ###
+### 程序 3，第 1 部分：ISPC 基础入门（20 分中的 10 分） ###
 
-When reading ISPC code, you must keep in mind that although the code appears
-much like C/C++ code, the ISPC execution model differs from that of standard
-C/C++. In contrast to C, multiple program instances of an ISPC program are
-always executed in parallel on the CPU's SIMD execution units. The number of
-program instances executed simultaneously is determined by the compiler (and
-chosen specifically for the underlying machine). This number of concurrent
-instances is available to the ISPC programmer via the built-in variable
-`programCount`. ISPC code can reference its own program instance identifier via
-the built-in `programIndex`. Thus, a call from C code to an ISPC function can
-be thought of as spawning a group of concurrent ISPC program instances
-(referred to in the ISPC documentation as a gang). The gang of instances
-runs to completion, then control returns back to the calling C code.
+阅读 ISPC 代码时，你必须牢记：尽管代码看起来与 C/C++ 代码非常相似，但 ISPC 的执行模型不同于标准 C/C++。与 C 不同，一个 ISPC 程序的多个程序实例（program instance）总是在 CPU 的 SIMD 执行单元上并行执行。同时执行的程序实例数量由编译器决定（并专门针对底层机器进行选择）。这个并发实例数量可以通过内置变量 `programCount` 提供给 ISPC 程序员。ISPC 代码可以通过内置的 `programIndex` 引用自身程序实例的标识符。因此，从 C 代码对 ISPC 函数的一次调用，可以看作是生成（spawn）了一组并发的 ISPC 程序实例（在 ISPC 文档中称为一个 gang）。这组实例（gang of instances）会一直运行到结束，然后控制权返回给调用它的 C 代码。
 
-__Stop. This is your friendly instructor. Please read the preceding paragraph again. Trust me.__
+__停一下。这是你的友好任课老师。请把上一段再读一遍。相信我。__
 
-As an example, the following program uses a combination of regular C code and ISPC
-code to add two 1024-element vectors. As we discussed in class, since each
-instance in a gang is independent and performing the exact
-same program logic, execution can be accelerated via
-implementation using SIMD instructions.
+举个例子，下面的程序把普通 C 代码与 ISPC 代码结合起来，将两个 1024 元素的向量相加。正如我们在课堂上讨论过的，由于 gang 中的每个实例都是独立的，并且执行完全相同的程序逻辑，因此可以通过使用 SIMD 指令的实现来加速执行。
 
-A simple ISPC program is given below. The following C code will call the
-following ISPC code:
+下面给出一个简单的 ISPC 程序。下面的 C 代码会调用下面的 ISPC 代码：
 
     ------------------------------------------------------------------------
     C program code: myprogram.cpp
@@ -198,7 +116,7 @@ following ISPC code:
  
     // Upon return from sum, result of a + b is stored in c.
 
-The corresponding ISPC code:
+对应的 ISPC 代码：
 
     ------------------------------------------------------------------------
     ISPC code: myprogram.ispc
@@ -212,21 +130,9 @@ The corresponding ISPC code:
       }
     }
 
-The ISPC program code above interleaves the processing of array elements among
-program instances. Note the similarity to Program 1, where you statically
-assigned parts of the image to threads.
+上面的 ISPC 程序代码让各程序实例交错地处理数组元素。注意它与程序 1 的相似之处——在程序 1 中，你把图像的各个部分静态地分配给了各个线程。
 
-However, rather than thinking about how to divide work among program instances
-(that is, how work is mapped to execution units), it is often more convenient,
-and more powerful, to instead focus only on the partitioning of a problem into
-independent parts. ISPCs `foreach` construct provides a mechanism to express
-problem decomposition. Below, the `foreach` loop in the ISPC function `sum2`
-defines an iteration space where all iterations are independent and therefore
-can be carried out in any order. ISPC handles the assignment of loop iterations
-to concurrent program instances. The difference between `sum` and `sum2` below
-is subtle, but very important. `sum` is imperative: it describes how to
-map work to concurrent instances. The example below is declarative: it
-specifies only the set of work to be performed.
+然而，与其思考如何在程序实例之间划分工作（也就是工作如何映射到执行单元），不如只专注于把问题划分为相互独立的部分，这通常更方便、也更强大。ISPC 的 `foreach` 结构提供了一种表达问题分解的机制。下面，ISPC 函数 `sum2` 中的 `foreach` 循环定义了一个迭代空间，其中所有迭代都是相互独立的，因此可以按任意顺序执行。由 ISPC 负责把循环迭代分配给并发的程序实例。下面 `sum` 与 `sum2` 之间的区别很细微，但非常重要。`sum` 是命令式（imperative）的：它描述的是如何把工作映射到并发实例。下面的示例则是声明式（declarative）的：它只规定了要执行的工作的集合。
 
     -------------------------------------------------------------------------
     ISPC code:
@@ -239,170 +145,97 @@ specifies only the set of work to be performed.
       }
     }
 
-Before proceeding, you are encouraged to familiarize yourself with ISPC
-language constructs by reading through the ISPC walkthrough available at
-<http://ispc.github.io/example.html>. The example program in the walkthrough
-is almost exactly the same as Program 3's implementation of `mandelbrot_ispc()`
-in `mandelbrot.ispc`. In the assignment code, we have changed the bounds of
-the foreach loop to yield a more straightforward implementation.
+在继续之前，建议你通过阅读 <http://ispc.github.io/example.html> 上的 ISPC 入门教程（walkthrough）来熟悉 ISPC 的语言结构。该教程中的示例程序与程序 3 在 `mandelbrot.ispc` 中 `mandelbrot_ispc()` 的实现几乎完全相同。在作业代码中，我们修改了 foreach 循环的边界，以得到更直白的实现。
 
-**What you need to do:**
+**你需要做的事情：**
 
-1.  Compile and run the program mandelbrot ispc by changing `avx2-i32x8` to `neon-i32x8` and `x86-64` to `aarch64` in the Makefile and then run make. __The ISPC compiler is currently configured to emit 8-wide Neon vector instructions.__  What is the maximum
-  speedup you expect given what you know about these CPUs?
-  Why might the number you observe be less than this ideal? (Hint:
-  Consider the characteristics of the computation you are performing?
-  Describe the parts of the image that present challenges for SIMD
-  execution? Comparing the performance of rendering the different views
-  of the Mandelbrot set may help confirm your hypothesis.).  
+1.  编译并运行程序 mandelbrot ispc：在 Makefile 中把 `avx2-i32x8` 改为 `neon-i32x8`、把 `x86-64` 改为 `aarch64`，然后运行 make。__ISPC 编译器目前被配置为生成 8 宽的 Neon 向量指令。__ 根据你对这些 CPU 的了解，你期望的最大加速比是多少？你观察到的数值为什么可能低于这个理想值？（提示：想一想你正在执行的计算具有怎样的特性？描述图像中哪些部分给 SIMD 执行带来了挑战？比较渲染 Mandelbrot 集不同视图的性能或许有助于验证你的假设。）
 
-  We remind you that for the code described in this subsection, the ISPC
-  compiler maps gangs of program instances to SIMD instructions executed
-  on a single core. This parallelization scheme differs from that of
-  Program 1, where speedup was achieved by running threads on multiple
-  cores.
+  我们提醒你，对于本小节描述的代码，ISPC 编译器是把程序实例的 gang 映射为在单个核心上执行的 SIMD 指令。这种并行化方案与程序 1 不同，后者是通过在多个核心上运行线程来获得加速的。
+
   
 
-### Program 3, Part 2: ISPC Tasks (10 of 20 points) ###
+### 程序 3，第 2 部分：ISPC 任务（tasks）（20 分中的 10 分） ###
 
-ISPCs SPMD execution model and mechanisms like `foreach` facilitate the creation
-of programs that utilize SIMD processing. The language also provides an additional
-mechanism utilizing multiple cores in an ISPC computation. This mechanism is
-launching _ISPC tasks_.
+ISPC 的 SPMD 执行模型以及 `foreach` 这类机制便于编写利用 SIMD 处理的程序。该语言还提供了另一种在 ISPC 计算中利用多核心的机制，即启动 _ISPC 任务（task）_。
 
-See the `launch[2]` command in the function `mandelbrot_ispc_withtasks`. This
-command launches two tasks. Each task defines a computation that will be
-executed by a gang of ISPC program instances. As given by the function
-`mandelbrot_ispc_task`, each task computes a region of the final image. Similar
-to how the `foreach` construct defines loop iterations that can be carried out
-in any order (and in parallel by ISPC program instances, the tasks created by
-this launch operation can be processed in any order (and in parallel on
-different CPU cores).
+参见函数 `mandelbrot_ispc_withtasks` 中的 `launch[2]` 命令。该命令启动两个任务。每个任务定义了一个将由一组 ISPC 程序实例执行的计算。如函数 `mandelbrot_ispc_task` 所给出的那样，每个任务计算最终图像的一个区域。与 `foreach` 结构定义可以按任意顺序（并由 ISPC 程序实例并行）执行的循环迭代类似，由这次 launch 操作创建的任务也可以按任意顺序（并在不同的 CPU 核心上并行）处理。
 
-**What you need to do:**
+**你需要做的事情：**
 
-1.  Run `mandelbrot_ispc` with the parameter `--tasks`. What speedup do you
-  observe on view 1? What is the speedup over the version of `mandelbrot_ispc` that
-  does not partition that computation into tasks?
-2.  There is a simple way to improve the performance of
-  `mandelbrot_ispc --tasks` by changing the number of tasks the code
-  creates. By only changing code in the function
-  `mandelbrot_ispc_withtasks()`, you should be able to achieve
-  performance that exceeds the sequential version by a substantial amount!
-  How did you determine how many tasks to create? Why does the
-  number you chose work best?
-3.  _Extra Credit: (2 points)_ What are differences between the thread
-  abstraction (used in Program 1) and the ISPC task abstraction? There
-  are some obvious differences in semantics between the (create/join
-  and (launch/sync) mechanisms, but the implications of these differences
-  are more subtle. Here's a thought experiment to guide your answer: what
-  happens when you launch 10,000 ISPC tasks? What happens when you launch
-  10,000 threads? (For this thought experiment, please discuss in the general case - 
-  i.e. don't tie your discussion to this given mandelbrot program.)
+1.  带 `--tasks` 参数运行 `mandelbrot_ispc`。你在视图 1 上观察到的加速比是多少？相对于不把计算划分为任务的 `mandelbrot_ispc` 版本，加速比又是多少？
+2.  有一种简单的方法可以提升 `mandelbrot_ispc --tasks` 的性能：改变代码创建的任务数量。只修改函数 `mandelbrot_ispc_withtasks()` 中的代码，你就应当能够让性能大幅超过串行版本！你是如何确定要创建多少个任务的？为什么你选择的数量效果最好？
+3.  _附加分：（2 分）_ 线程抽象（程序 1 中使用的）与 ISPC 任务抽象之间有哪些区别？在（create/join）与（launch/sync）机制之间存在一些明显的语义差异，但这些差异的影响则更加微妙。这里有一个思想实验可以引导你作答：当你启动 10,000 个 ISPC 任务时会发生什么？当你启动 10,000 个线程时又会发生什么？（对于这个思想实验，请就一般情况进行讨论——也就是说，不要把讨论局限于这个给定的 mandelbrot 程序。）
 
-_The smart-thinking student's question_: Hey wait! Why are there two different
-mechanisms (`foreach` and `launch`) for expressing independent, parallelizable
-work to the ISPC system? Couldn't the system just partition the many iterations
-of `foreach` across all cores and also emit the appropriate SIMD code for the
-cores?
+_善于思考的同学的问题_：嘿，等等！为什么 ISPC 系统要用两种不同的机制（`foreach` 和 `launch`）来表达相互独立、可并行的工作？难道系统不能直接把 `foreach` 的大量迭代划分到所有核心上，同时为各核心生成相应的 SIMD 代码吗？
 
-_Answer_: Great question! And there are a lot of possible answers. Come to
-office hours.
+_回答_：好问题！可能的答案有很多。欢迎来办公时间（office hours）交流。
 
-## Program 4: Iterative `sqrt` (15 points) ##
+## 程序 4：迭代法 `sqrt`（15 分） ##
 
-Program 4 is an ISPC program that computes the square root of 20 million
-random numbers between 0 and 3. It uses a fast, iterative implementation of
-square root that uses Newton's method to solve the equation ${\frac{1}{x^2}} - S = 0$.
-The value 1.0 is used as the initial guess in this implementation. The graph below shows the 
-number of iterations required for `sqrt` to converge to an accurate solution 
-for values in the (0-3) range. (The implementation does not converge for 
-inputs outside this range). Notice that the speed of convergence depends on the 
-accuracy of the initial guess.
+程序 4 是一个 ISPC 程序，它计算 2000 万个介于 0 和 3 之间的随机数的平方根。它使用平方根的一种快速迭代实现，利用牛顿法（Newton's method）求解方程 ${\frac{1}{x^2}} - S = 0$。该实现使用 1.0 作为初始猜测值。下图显示了对于 (0-3) 范围内的值，`sqrt` 收敛到精确解所需的迭代次数。（对于该范围之外的输入，该实现不收敛。）注意，收敛速度取决于初始猜测值的准确程度。
 
-Note: This problem is a review to double-check your understanding, as it covers similar concepts as programs 2 and 3.
+注意：这道题是对你理解程度的复习检查，因为它涵盖的概念与程序 2 和程序 3 类似。
 
-![Convergence of sqrt](handout-images/sqrt_graph.jpg "Convergence of sqrt on the range 0-3 with starting guess 1.0. Note that iterations until convergence is immediate for an input value of 1 and increases as the input value goes toward 0 or 3 (highest value is for input of 3).")
+![sqrt 的收敛](handout-images/sqrt_graph.jpg "sqrt 在 0-3 范围内、初始猜测值为 1.0 时的收敛情况。注意，当输入值为 1 时立即收敛；随着输入值趋向 0 或 3，收敛所需的迭代次数增加（输入为 3 时迭代次数最多）。")
 
-**What you need to do:**
+**你需要做的事情：**
 
-1.  Build and run sqrt, by changing `avx2-i32x8` to `neon-i32x8` and `x86-64` to `aarch64` in the Makefile and then running make. Report the ISPC implementation speedup for single CPU core (no tasks) and when using all cores (with tasks). What 
-  is the speedup due to SIMD parallelization? What is the speedup due to 
-  multi-core parallelization?
-2.  Modify the contents of the array values to improve the relative speedup 
-  of the ISPC implementations. Construct a specifc input that __maximizes speedup over the sequential version of the code__ and report the resulting speedup achieved (for both the with- and without-tasks ISPC implementations). Does your modification improve SIMD speedup?
-  Does it improve multi-core speedup (i.e., the benefit of moving from ISPC without-tasks to ISPC with tasks)? Please explain why.
-3.  Construct a specific input for `sqrt` that __minimizes speedup for ISPC (without-tasks) over the sequential version of the code__. Describe this input, describe why you chose it, and report the resulting relative performance of the ISPC implementations. What is the reason for the loss in efficiency? 
-    __(keep in mind we are using the `--target=neon` option for ISPC, which generates 8-wide SIMD instructions)__. 
-4.  _Extra Credit: (up to 2 points)_ Write your own version of the `sqrt` 
- function manually using AVX2 intrinsics. To get credit your 
-    implementation should be nearly as fast (or faster) than the binary 
-    produced using ISPC. You may find the [Arm Neon Intrinsics Guide]([https://software.intel.com/sites/landingpage/IntrinsicsGuide/](https://arm-software.github.io/acle/neon_intrinsics/advsimd.html)) 
-    very helpful.
+1.  编译并运行 sqrt：在 Makefile 中把 `avx2-i32x8` 改为 `neon-i32x8`、把 `x86-64` 改为 `aarch64`，然后运行 make。报告 ISPC 实现在单个 CPU 核心（无任务）以及使用所有核心（有任务）时的加速比。SIMD 并行化带来了多少加速比？多核并行化又带来了多少加速比？
+2.  修改数组 values 的内容，以提高 ISPC 实现的相对加速比。构造一个能 __最大化相对于代码串行版本的加速比__ 的特定输入，并报告由此获得的加速比（有任务与无任务的 ISPC 实现都要报告）。你的修改是否提高了 SIMD 加速比？是否提高了多核加速比（即从无任务 ISPC 转向有任务 ISPC 带来的收益）？请解释原因。
+3.  为 `sqrt` 构造一个能 __最小化 ISPC（无任务）相对于代码串行版本的加速比__ 的特定输入。描述这个输入，说明你为什么选择它，并报告 ISPC 实现由此产生的相对性能。效率损失的原因是什么？__（请记住，我们使用的是 ISPC 的 `--target=neon` 选项，它会生成 8 宽的 SIMD 指令）__。
+4.  _附加分：（最多 2 分）_ 使用 AVX2 内建函数手写你自己的 `sqrt` 函数版本。要获得分数，你的实现应当几乎和用 ISPC 生成的二进制文件一样快（或者更快）。你可能会发现 [Arm Neon 内建函数指南（Intrinsics Guide）]([https://software.intel.com/sites/landingpage/IntrinsicsGuide/](https://arm-software.github.io/acle/neon_intrinsics/advsimd.html)) 非常有用。
  
-## Program 5: BLAS `saxpy` (10 points) ##
+## 程序 5：BLAS `saxpy`（10 分） ##
 
-Program 5 is an implementation of the saxpy routine in the BLAS (Basic Linear
-Algebra Subproblems) library that is widely used (and heavily optimized) on 
-many systems. `saxpy` computes the simple operation `result = scale*X+Y`, where `X`, `Y`, 
-and `result` are vectors of `N` elements (in Program 5, `N` = 20 million) and `scale` is a scalar. Note that 
-`saxpy` performs two math operations (one multiply, one add) for every three 
-elements used. `saxpy` is a *trivially parallelizable computation* and features predictable, regular data access and predictable execution cost.
+程序 5 是 BLAS（Basic Linear Algebra Subproblems，基础线性代数子问题）库中 saxpy 例程的一个实现。该库在许多系统上被广泛使用（并被高度优化）。`saxpy` 计算简单的操作 `result = scale*X+Y`，其中 `X`、`Y` 和 `result` 是包含 `N` 个元素的向量（在程序 5 中 `N` = 2000 万），`scale` 是一个标量。注意，`saxpy` 每使用三个元素就要执行两次数学运算（一次乘法、一次加法）。`saxpy` 是一种*极易并行化的计算*，具有可预测、规整的数据访问和可预测的执行开销。
 
-**What you need to do:**
+**你需要做的事情：**
 
-1.  Compile and run `saxpy`. The program will report the performance of
-  ISPC (without tasks) and ISPC (with tasks) implementations of saxpy. What 
-  speedup from using ISPC with tasks do you observe? Explain the performance of this program.
-  Do you think it can be substantially improved? (For example, could you rewrite the code to achieve near linear speedup? Yes or No? Please justify your answer.)
-2. __Extra Credit:__ (1 point) Note that the total memory bandwidth consumed computation in `main.cpp` is `TOTAL_BYTES = 4 * N * sizeof(float);`.  Even though `saxpy` loads one element from X, one element from Y, and writes one element to `result` the multiplier by 4 is correct.  Why is this the case? (Hint, think about how CPU caches work.)
-3. __Extra Credit:__ (points handled on a case-by-case basis) Improve the performance of `saxpy`.
-  We're looking for a significant speedup here, not just a few percentage 
-  points. If successful, describe how you did it and what a best-possible implementation on these systems might achieve. Also, if successful, come tell the staff, we'll be interested. ;-)
+1.  编译并运行 `saxpy`。程序会报告 saxpy 的 ISPC（无任务）和 ISPC（有任务）实现的性能。你观察到使用带任务的 ISPC 获得了多少加速比？请解释这个程序的性能表现。你认为它能被大幅改进吗？（例如，你能通过重写代码获得接近线性的加速比吗？能还是不能？请给出理由。）
+2. __附加分：__（1 分）注意 `main.cpp` 中计算总内存带宽消耗的公式是 `TOTAL_BYTES = 4 * N * sizeof(float);`。尽管 `saxpy` 会从 X 加载一个元素、从 Y 加载一个元素、并向 `result` 写入一个元素，但乘数 4 是正确的。为什么会这样？（提示：想一想 CPU 缓存是如何工作的。）
+3. __附加分：__（分数视情况个案处理）改进 `saxpy` 的性能。我们期待的是显著的加速，而不只是几个百分点的提升。如果成功了，请描述你是如何做到的，以及在这些系统上一个尽可能最优的实现可能达到的水平。另外，如果成功了，来告诉助教团队，我们会感兴趣的 ;-)
 
-Notes: Some students have gotten hung up on this question (thinking too hard) in the past. We expect a simple answer, but the results from running this problem might trigger more questions in your head.  Feel encouraged to come talk to the staff.
+注意：过去有一些同学在这道题上卡住了（想得太多）。我们期待的是一个简单的答案，但运行这道题的结果可能会在你脑海中引出更多问题。欢迎随时来找助教团队聊聊。
 
-## Program 6: Making `K-Means` Faster (15 points) ##
+## 程序 6：让 `K-Means` 更快（15 分） ##
 
-Program 6 clusters one million data points using the K-Means data clustering algorithm ([Wikipedia](https://en.wikipedia.org/wiki/K-means_clustering), [CS 221 Handout](https://stanford.edu/~cpiech/cs221/handouts/kmeans.html)). If you're unfamiliar with the algorithm, don't worry! The specifics aren't important to the exercise, but at a high level, given K starting points (cluster centroids), the algorithm iteratively updates the centroids until a convergence criteria is met. The results can be seen in the below images depicting the state of the algorithm at the beginning and end of the program, where red stars are cluster centroids and the data point colors correspond to cluster assignments.
+程序 6 使用 K-Means 数据聚类算法（[Wikipedia](https://en.wikipedia.org/wiki/K-means_clustering)，[CS 221 讲义](https://stanford.edu/~cpiech/cs221/handouts/kmeans.html)）对一百万个数据点进行聚类。如果你不熟悉该算法，别担心！其细节对本练习并不重要；大致来说，给定 K 个起始点（聚类质心，cluster centroids），算法会迭代地更新质心，直到满足收敛准则为止。结果可以在下面的图像中看到，它们描绘了程序开始时和结束时算法的状态，其中红色星号表示聚类质心，数据点的颜色对应其聚类分配。
 
-![K-Means starting and ending point](./handout-images/kmeans.jpg "Starting and ending point of the K-Means algorithm applied to 2 dimensional data.")
+![K-Means 的起点与终点](./handout-images/kmeans.jpg "将 K-Means 算法应用于二维数据的起点与终点。")
 
-In the starter code you have been given a correct implementation of the K-means algorithm, however in its current state it is not quite as fast as we would like it to be. This is where you come in! Your job will be to figure out **where** the implementation needs to be improved and **how** to improve it. The key skill you will practice in this problem is __isolating a performance hotspot__.  We aren't going to tell you where to look in the code.  You need to figure it out. Your first thought should be... where is the code spending the most time and you should insert timing code into the source to make measurements.  Based on these measurements, you should focus in on the part of the code that is taking a significant portion of the runtime, and then understand it more carefully to determine if there is a way to speed it up.
+在起始代码中，你已经得到了 K-means 算法的一个正确实现，但目前它的速度还没有达到我们期望的水平。这就轮到你出场了！你的任务是弄清楚实现需要在**哪里**改进，以及**如何**改进。你将在本题中练习的关键技能是__定位性能热点（hotspot）__。我们不会告诉你要看代码的哪个地方，你需要自己弄清楚。你的第一个念头应该是……代码把大部分时间花在了哪里？你应当在源代码中插入计时代码来进行测量。基于这些测量结果，你应当聚焦到占用运行时间相当大比例的那部分代码，然后更仔细地理解它，以确定是否有办法加快它的速度。
 
-**What you need to do:**
+**你需要做的事情：**
 
-1. Download the data by running this command on your personal machine `scp [Your SUNetID]@myth[51-66].stanford.edu:/afs/ir.stanford.edu/class/cs149/data/data.dat ./data.dat`. Once you have the data, compile and run `kmeans` (it may take longer than usual for the program to load the data on your first try). The program will report the total runtime of the algorithm on the data.
-2.  Run `pip install -r requirements.txt` to download the necessary plotting packages. Next, try running `python3 plot.py` which will generate the files "start.png" and "end.png" from the logs ("start.log" and "end.log") generated from running `kmeans`. These files will be in the current directory and should look similar to the above images. __Warning: You might notice that not all points are assigned to the "closest" centroid. This is okay.__ (For those that want to understand why: We project 100-dimensional datapoints down to 2-D using [PCA](https://en.wikipedia.org/wiki/Principal_component_analysis) to produce these visualizations. Therefore, while the 100-D datapoint is near the appropriate centroid in high dimensional space, the projects of the datapoint and the centroid may not be close to each other in 2-D.). As long as the clustering looks "reasonable" (use the images produced by the starter code in step 2 as a reference) and most points appear to be assigned to the clostest centroid, the code remains correct.
-3.  Utilize the timing function in `common/CycleTimer.h` to determine where in the code there are performance bottlenecks. You will need to call `CycleTimer::currentSeconds()`, which returns the current time (in seconds) as a floating point number. Where is most of the time being spent in the code?
-4.  Based on your findings from the previous step, improve the implementation. We are looking for a speedup of about 2.1x or more (i.e $\frac{oldRuntime}{newRuntime} >= 2.1$). Please explain how you arrived at your solution, as well as what your final solution is and the associated speedup. The writeup of this process should describe a sequence of steps. We expect something of the form "I measured ... which let me to believe X. So to improve things I tried ... resulting in a speedup/slowdown of ...".
+1. 通过在你的个人机器上运行命令 `scp [Your SUNetID]@myth[51-66].stanford.edu:/afs/ir.stanford.edu/class/cs149/data/data.dat ./data.dat` 来下载数据。拿到数据之后，编译并运行 `kmeans`（第一次运行时，程序加载数据可能比平时更久）。程序会报告算法在该数据上的总运行时间。
+2.  运行 `pip install -r requirements.txt` 下载所需的绘图包。接下来，尝试运行 `python3 plot.py`，它会根据运行 `kmeans` 生成的日志（"start.log" 和 "end.log"）生成文件 "start.png" 和 "end.png"。这些文件会出现在当前目录中，看起来应当与上面的图像相似。__警告：你可能会注意到并非所有点都被分配给了"最近的"质心。这是正常的。__（想了解原因的同学：我们使用 [PCA](https://en.wikipedia.org/wiki/Principal_component_analysis) 把 100 维数据点投影到 2 维来生成这些可视化。因此，虽然 100 维数据点在高维空间中靠近相应的质心，但数据点与质心的投影在 2 维中可能并不彼此接近。）只要聚类结果看起来"合理"（以第 2 步中起始代码生成的图像作为参考），并且大多数点看起来被分配给了最近的质心，代码就仍然是正确的。
+3.  利用 `common/CycleTimer.h` 中的计时函数来确定代码中哪里存在性能瓶颈。你需要调用 `CycleTimer::currentSeconds()`，它以浮点数形式返回当前时间（单位为秒）。代码中大部分时间花费在哪里？
+4.  根据上一步的发现改进实现。我们期待大约 2.1 倍或更高的加速比（即 $\frac{oldRuntime}{newRuntime} >= 2.1$）。请解释你是如何得出解决方案的，以及你的最终方案是什么、相应的加速比是多少。这一过程的报告应当描述一系列步骤。我们期待类似这样的形式："我测量了……这让我相信 X。于是为了改进，我尝试了……结果带来了……的加速/减速"。
   
-Constraints:
-- You may only modify code in `kmeansThread.cpp`. You are not allowed to modify the `stoppingConditionMet` function and you cannot change the interface to `kMeansThread`, but anything is fair game (e.g. you can add new members to the `WorkerArgs` struct, rewrite functions, allocate new arrays, etc.). However...
-- **Make sure you do not change the functionality of the implementation! If the algorithm doesn't converge or the result from running `python3 plot.py` does not look like what's produced by the starter code, something is wrong!** For example, you cannot simply remove the main "while" loop or change the semantics of the `dist` function, since this would yield incorrect results.
-- __Important:__ you may only parallelize __one__ of the following functions: `dist`, `computeAssignments`, `computeCentroids`, `computeCost`. For an example of how to write parallel code using `std::thread`, see `prog1_mandelbrot_threads/mandelbrotThread.cpp`.
+约束条件：
+- 你只能修改 `kmeansThread.cpp` 中的代码。你不允许修改 `stoppingConditionMet` 函数，也不能更改 `kMeansThread` 的接口，但除此之外一切都可以发挥（例如，你可以给 `WorkerArgs` 结构体添加新成员、重写函数、分配新数组等）。但是……
+- **务必不要改变实现的功能！如果算法不收敛，或者运行 `python3 plot.py` 得到的结果与起始代码生成的结果不一样，那就说明出了问题！** 例如，你不能直接删掉主 "while" 循环，也不能改变 `dist` 函数的语义，因为这会产生错误的结果。
+- __重要：__ 你只能并行化以下函数中的 __一个__：`dist`、`computeAssignments`、`computeCentroids`、`computeCost`。关于如何用 `std::thread` 编写并行代码的示例，参见 `prog1_mandelbrot_threads/mandelbrotThread.cpp`。
   
-Tips / Notes: 
-- This problem should not require a significant amount of coding. Our solution modified/added around 20-25 lines of code.
-- Once you've used timers to isolate hotspots, to improve the code make sure you understand the relative sizes of K, M, and N.
-- Try to prioritize code improvements with the potential for high returns and think about the different axes of parallelism available in the problem and how you may take advantage of them.
-- **The objective of this program is to give you more practice with learning how to profile and debug performance oriented programs. Even if you don't hit the performance target, if you demonstrate good/thoughtful debugging skills in the writeup you'll still get most of the points.**
+提示 / 注意：
+- 这道题不需要大量编码。我们的解决方案修改/添加了大约 20-25 行代码。
+- 在用计时器隔离出热点之后，要改进代码，请确保你理解 K、M 和 N 的相对大小。
+- 尝试优先考虑具有高回报潜力的代码改进，并思考该问题中可用的不同并行化维度（axes of parallelism），以及你可以如何利用它们。
+- **本程序的目的是让你更多地练习如何对面向性能的程序进行性能分析（profiling）和调试。即使你没有达到性能目标，只要你在报告中展现出良好/经过深思熟虑的调试能力，你仍然可以得到大部分分数。**
 
 
-## For the Curious (highly recommended) ##
+## 献给好奇的人（强烈推荐） ##
 
-Want to know about ISPC and how it was created? One of the two creators of ISPC, Matt Pharr, wrote an __amazing blog post__ on the history of its development called [The story of ispc](https://pharr.org/matt/blog/2018/04/30/ispc-all).  It really touches on many issues of parallel system design -- in particular the value of limited scope vs general programming languages.  IMHO it's a must read for CS149 students!
+想了解 ISPC 以及它是如何诞生的吗？ISPC 的两位创造者之一 Matt Pharr 写过一篇关于其开发历史的 __精彩博客文章__，题为 [The story of ispc](https://pharr.org/matt/blog/2018/04/30/ispc-all)。它真正触及了并行系统设计的许多问题——尤其是受限适用范围（limited scope）与通用编程语言相比的价值所在。在我看来（IMHO），这是 CS149 学生的必读文章！
 
-## Hand-in Instructions ##
+## 提交说明 ##
 
-Handin will be performed via [Gradescope](https://www.gradescope.com). Only one handin per group is required. However, please make sure that you add your partner's name to the gradescope submission. There is one place you will need to turn in the files on Gradescope: `Assignment 1 (Write-Up)`. Do not submit code related to running locally to Gradescope, as we will only run code on Myth machines. Please paste your Mac findings after the Myth write up. 
+提交将通过 [Gradescope](https://www.gradescope.com) 进行。每组只需提交一次。但是，请确保在 Gradescope 提交中加上你搭档的名字。你需要在 Gradescope 上的一个位置提交文件：`Assignment 1 (Write-Up)`。不要把与本地运行相关的代码提交到 Gradescope，因为我们只会在 Myth 机器上运行代码。请把你在 Mac 上的发现粘贴在 Myth 报告之后。
 
-## Resources and Notes ##
+## 资源与说明 ##
 
--  Extensive ISPC documentation and examples can be found at
-  <http://ispc.github.io/>
--  Zooming into different locations of the mandelbrot image can be quite
-  fascinating
--  Arm provides a lot of supporting material about Neon vector instructions at 
-  <https://developer.arm.com/architectures/instruction-sets/intrinsics/>.  
+-  大量 ISPC 文档和示例可以在 <http://ispc.github.io/> 找到
+-  把 mandelbrot 图像缩放到不同位置进行观察可能相当有趣
+-  Arm 在 <https://developer.arm.com/architectures/instruction-sets/intrinsics/> 提供了大量关于 Neon 向量指令的支持材料。
 

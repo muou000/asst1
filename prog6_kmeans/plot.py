@@ -9,16 +9,16 @@ END_LOGFILE = "./end.log"
 START_PLOTFILE = "./start.png"
 END_PLOTFILE = "./end.png"
 
-for title, logfile, plotfile in [("Start", START_LOGFILE, START_PLOTFILE), ("End", END_LOGFILE, END_PLOTFILE)]:
+for title, logfile, plotfile in [("开始", START_LOGFILE, START_PLOTFILE), ("结束", END_LOGFILE, END_PLOTFILE)]:
 
-    assert os.path.exists(logfile), "Log file doesn't exist, try running the program."
+    assert os.path.exists(logfile), "日志文件不存在，请先运行程序生成日志。"
 
     with open(logfile) as f:
-        # Read header
+        # 读取文件头
         M, N, K = f.readline().split(',')
         M, N, K = int(M), int(N), int(K)
 
-        # Read data
+        # 读取数据
         data = []
         cluster_assignments = []
         cluster_centroids = []
@@ -34,12 +34,12 @@ for title, logfile, plotfile in [("Start", START_LOGFILE, START_PLOTFILE), ("End
                 centroid = line.split(':')[1].strip().split(' ')
                 cluster_centroids.append(np.asarray(centroid, dtype=float))
 
-    # Main data containers
+    # 主要的数据容器
     data = np.stack(data)
     cluster_assignments = np.asarray(cluster_assignments, dtype=int)
     cluster_centroids = np.stack(cluster_centroids)
 
-    # Dimensionality reduction so we can plot the clusters
+    # 降维，以便绘制各 cluster
     pca = PCA(n_components=2)
     pca.fit(data)
 

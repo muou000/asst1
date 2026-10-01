@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <algorithm>
+#include <cstring>
 #include <getopt.h>
 
 #include "CycleTimer.h"
@@ -42,11 +43,11 @@ scaleAndShift(float& x0, float& x1, float& y0, float& y1,
 }
 
 void usage(const char* progname) {
-    printf("Usage: %s [options]\n", progname);
-    printf("Program Options:\n");
-    printf("  -t  --threads <N>  Use N threads\n");
-    printf("  -v  --view <INT>   Use specified view settings\n");
-    printf("  -?  --help         This message\n");
+    printf("用法: %s [选项]\n", progname);
+    printf("程序选项:\n");
+    printf("  -t  --threads <N>  使用 N 个 thread\n");
+    printf("  -v  --view <INT>   使用指定的视图(view)设置\n");
+    printf("  -?  --help         显示本帮助信息\n");
 }
 
 bool verifyResult (int *gold, int *result, int width, int height) {
@@ -56,7 +57,7 @@ bool verifyResult (int *gold, int *result, int width, int height) {
     for (i = 0; i < height; i++) {
         for (j = 0; j < width; j++) {
             if (gold[i * width + j] != result[i * width + j]) {
-                printf ("Mismatch : [%d][%d], Expected : %d, Actual : %d\n",
+                printf ("不匹配 : [%d][%d], 期望 : %d, 实际 : %d\n",
                             i, j, gold[i * width + j], result[i * width + j]);
                 return 0;
             }
@@ -78,7 +79,7 @@ int main(int argc, char** argv) {
     float y0 = -1;
     float y1 = 1;
 
-    // parse commandline options ////////////////////////////////////////////
+    // 解析命令行选项 ////////////////////////////////////////////
     int opt;
     static struct option long_options[] = {
         {"threads", 1, 0, 't'},
@@ -98,14 +99,14 @@ int main(int argc, char** argv) {
         case 'v':
         {
             int viewIndex = atoi(optarg);
-            // change view settings
+            // 更改视图设置
             if (viewIndex == 2) {
                 float scaleValue = .015f;
                 float shiftX = -.986f;
                 float shiftY = .30f;
                 scaleAndShift(x0, x1, y0, y1, scaleValue, shiftX, shiftY);
             } else if (viewIndex > 1) {
-                fprintf(stderr, "Invalid view index\n");
+                fprintf(stderr, "无效的视图索引\n");
                 return 1;
             }
             break;
@@ -116,15 +117,15 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
-    // end parsing of commandline options
+    // 命令行选项解析结束
 
 
     int* output_serial = new int[width*height];
     int* output_thread = new int[width*height];
-    
+
     //
-    // Run the serial implementation.  Run the code three times and
-    // take the minimum to get a good estimate.
+    // 运行串行（serial）实现。将代码运行三次并取最小值，
+    // 以获得较好的估计。
     //
 
     double minSerial = 1e30;
@@ -140,7 +141,7 @@ int main(int argc, char** argv) {
     writePPMImage(output_serial, width, height, "mandelbrot-serial.ppm", maxIterations);
 
     //
-    // Run the threaded version
+    // 运行多 thread 版本
     //
 
     double minThread = 1e30;
@@ -156,7 +157,7 @@ int main(int argc, char** argv) {
     writePPMImage(output_thread, width, height, "mandelbrot-thread.ppm", maxIterations);
 
     if (! verifyResult (output_serial, output_thread, width, height)) {
-        printf ("Error : Output from threads does not match serial output\n");
+        printf ("错误 : thread 版本的输出与串行（serial）版本的输出不一致\n");
 
         delete[] output_serial;
         delete[] output_thread;
@@ -164,8 +165,8 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // compute speedup
-    printf("\t\t\t\t(%.2fx speedup from %d threads)\n", minSerial/minThread, numThreads);
+    // 计算加速比
+    printf("\t\t\t\t(%.2fx 加速比, 来自 %d 个 thread)\n", minSerial/minThread, numThreads);
 
     delete[] output_serial;
     delete[] output_thread;

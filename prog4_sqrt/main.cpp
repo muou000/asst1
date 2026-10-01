@@ -13,7 +13,7 @@ extern void sqrtSerial(int N, float startGuess, float* values, float* output);
 static void verifyResult(int N, float* result, float* gold) {
     for (int i=0; i<N; i++) {
         if (fabs(result[i] - gold[i]) > 1e-4) {
-            printf("Error: [%d] Got %f expected %f\n", i, result[i], gold[i]);
+            printf("错误: [%d] 得到 %f，期望 %f\n", i, result[i], gold[i]);
         }
     }
 }
@@ -29,21 +29,21 @@ int main() {
 
     for (unsigned int i=0; i<N; i++)
     {
-        // TODO: CS149 students.  Attempt to change the values in the
-        // array here to meet the instructions in the handout: we want
-        // to you generate best and worse-case speedups
+        // TODO: CS149 的同学们。请尝试修改此数组中存放的取值，
+        // 以满足课程讲义中的要求：我们希望你们生成出最好情况和
+        // 最坏情况下的加速比
         
-        // starter code populates array with random input values
+        // 起始代码用随机输入值填充数组
         values[i] = .001f + 2.998f * static_cast<float>(rand()) / RAND_MAX;
     }
 
-    // generate a gold version to check results
+    // 生成一份 gold（参考标准）结果用于校验
     for (unsigned int i=0; i<N; i++)
         gold[i] = sqrt(values[i]);
 
     //
-    // And run the serial implementation 3 times, again reporting the
-    // minimum time.
+    // 用串行实现运行 3 次，
+    // 同样报告其中的最小时间。
     //
     double minSerial = 1e30;
     for (int i = 0; i < 3; ++i) {
@@ -53,13 +53,13 @@ int main() {
         minSerial = std::min(minSerial, endTime - startTime);
     }
 
-    printf("[sqrt serial]:\t\t[%.3f] ms\n", minSerial * 1000);
+    printf("[sqrt 串行]:\t\t[%.3f] ms\n", minSerial * 1000);
 
     verifyResult(N, output, gold);
 
     //
-    // Compute the image using the ispc implementation; report the minimum
-    // time of three runs.
+    // 使用 ispc 实现进行计算；报告三次
+    // 运行中的最小时间。
     //
     double minISPC = 1e30;
     for (int i = 0; i < 3; ++i) {
@@ -73,12 +73,12 @@ int main() {
 
     verifyResult(N, output, gold);
 
-    // Clear out the buffer
+    // 清空缓冲区
     for (unsigned int i = 0; i < N; ++i)
         output[i] = 0;
 
     //
-    // Tasking version of the ISPC code
+    // ISPC 代码的 task 版本
     //
     double minTaskISPC = 1e30;
     for (int i = 0; i < 3; ++i) {
@@ -92,8 +92,8 @@ int main() {
 
     verifyResult(N, output, gold);
 
-    printf("\t\t\t\t(%.2fx speedup from ISPC)\n", minSerial/minISPC);
-    printf("\t\t\t\t(%.2fx speedup from task ISPC)\n", minSerial/minTaskISPC);
+    printf("\t\t\t\t(ISPC 带来 %.2fx 的加速)\n", minSerial/minISPC);
+    printf("\t\t\t\t(task ISPC 带来 %.2fx 的加速)\n", minSerial/minTaskISPC);
 
     delete [] values;
     delete [] output;

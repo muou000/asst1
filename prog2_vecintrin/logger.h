@@ -12,7 +12,7 @@ struct __cs149_mask;
 
 struct Log {
   char instruction[MAX_INST_LEN];
-  unsigned long long mask; // support vector width up to 64
+  unsigned long long mask; // 支持最大 64 的 vector 宽度
 };
 
 struct Statistics {
