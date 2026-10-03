@@ -34,8 +34,13 @@ void workerThreadStart(WorkerArgs * const args) {
     // thread 都应调用 mandelbrotSerial() 来计算输出图像的一部分。
     // 例如，在一个使用两个 thread 的程序中，thread 0 可以计算图像的
     // 上半部分，thread 1 计算图像的下半部分。
+    // double startTime = CycleTimer::currentSeconds();
+    for(unsigned int i = args->threadId; i < args->height; i += args->numThreads) {
+        mandelbrotSerial(args->x0, args->y0, args->x1, args->y1, args->width, args->height, i, 1, args->maxIterations, args->output);
+    }
+    // double endTime = CycleTimer::currentSeconds();
 
-    printf("来自 thread %d 的 Hello world\n", args->threadId);
+    // printf("%d, %.3f \n", args->threadId, endTime - startTime);
 }
 
 //
