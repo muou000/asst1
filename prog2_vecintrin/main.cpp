@@ -249,7 +249,37 @@ void clampedExpVector(float* values, int* exponents, float* output, int N) {
   // 你的解法应当对任意 N 和 VECTOR_WIDTH 都能工作，
   // 而不只是 VECTOR_WIDTH 恰好整除 N 的情况
   //
-  
+  __cs149_vec_float x;
+  __cs149_vec_int y;
+  __cs149_vec_float result;
+  __cs149_vec_int zero = _cs149_vset_int(0);
+  __cs149_vec_int one = _cs149_vset_int(1);
+  __cs149_vec_float clampValue = _cs149_vset_float(9.999999f);
+
+  for (int i = 0; i < N; i += VECTOR_WIDTH) {
+    int cnt = min(N - i, VECTOR_WIDTH);
+    __cs149_mask validMask = _cs149_init_ones(cnt);
+
+    _cs149_vset_float(result, 1.0f, validMask);
+
+    _cs149_vload_float(x, values + i, validMask);
+    _cs149_vload_int(y, exponents + i, validMask);
+
+    __cs149_mask exp = _cs149_init_ones(0);
+    _cs149_vgt_int(exp, y, zero, validMask);
+
+    while (_cs149_cntbits(exp) != 0) {
+      _cs149_vmult_float(result, result, x, exp);
+      _cs149_vsub_int(y, y, one, exp);
+      _cs149_vgt_int(exp, y, zero, validMask);
+    }
+
+    __cs149_mask clampMask = _cs149_init_ones(0);
+    _cs149_vgt_float(clampMask, result, clampValue, validMask);
+    _cs149_vmove_float(result, clampValue, clampMask);
+
+    _cs149_vstore_float(output + i, result, validMask);
+  }
 }
 
 // 返回 values 中所有元素的和
@@ -266,15 +296,24 @@ float arraySumSerial(float* values, int N) {
 // 你可以假设 N 是 VECTOR_WIDTH 的倍数
 // 你可以假设 VECTOR_WIDTH 是 2 的幂
 float arraySumVector(float* values, int N) {
-  
+
   //
   // CS149 学生 TODO: 在这里实现 arraySumSerial 的向量化版本
   //
-  
-  for (int i=0; i<N; i+=VECTOR_WIDTH) {
+  __cs149_mask maskAll = _cs149_init_ones();
+  __cs149_vec_float x;
+  __cs149_vec_float sum = _cs149_vset_float(0.0f);
 
+  for (int i=0; i<N; i+=VECTOR_WIDTH) {
+    _cs149_vload_float(x, values + i, maskAll);
+    _cs149_vadd_float(sum, sum, x, maskAll);
   }
 
-  return 0.0;
+  for(int i = 0; i < log2(VECTOR_WIDTH); i++) {
+    _cs149_hadd_float(sum, sum);
+    _cs149_interleave_float(sum, sum);
+  }
+
+  return sum.value[0];
 }
 
