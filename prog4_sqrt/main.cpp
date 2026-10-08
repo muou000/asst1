@@ -9,6 +9,7 @@
 using namespace ispc;
 
 extern void sqrtSerial(int N, float startGuess, float* values, float* output);
+extern void sqrtAVX(int N, float startGuess, float* values, float* output);
 
 static void verifyResult(int N, float* result, float* gold) {
     for (int i=0; i<N; i++) {
@@ -32,9 +33,13 @@ int main() {
         // TODO: CS149 的同学们。请尝试修改此数组中存放的取值，
         // 以满足课程讲义中的要求：我们希望你们生成出最好情况和
         // 最坏情况下的加速比
-        
+
         // 起始代码用随机输入值填充数组
-        values[i] = .001f + 2.998f * static_cast<float>(rand()) / RAND_MAX;
+        // values[i] = .001f + 2.998f * static_cast<float>(rand()) / RAND_MAX;
+        // minimum
+        //values[i] = 1.0f;
+        // maximum 越趋向于3，加速比越大
+        values[i] = 2.999999f;
     }
 
     // 生成一份 gold（参考标准）结果用于校验
@@ -92,8 +97,28 @@ int main() {
 
     verifyResult(N, output, gold);
 
+    // 清空缓冲区
+    for (unsigned int i = 0; i < N; ++i)
+        output[i] = 0;
+
+    //
+    // AVX2 内建函数手写版本
+    //
+    double minAVX = 1e30;
+    for (int i = 0; i < 3; ++i) {
+        double startTime = CycleTimer::currentSeconds();
+        sqrtAVX(N, initialGuess, values, output);
+        double endTime = CycleTimer::currentSeconds();
+        minAVX = std::min(minAVX, endTime - startTime);
+    }
+
+    printf("[sqrt AVX2 手写]:\t[%.3f] ms\n", minAVX * 1000);
+
+    verifyResult(N, output, gold);
+
     printf("\t\t\t\t(ISPC 带来 %.2fx 的加速)\n", minSerial/minISPC);
     printf("\t\t\t\t(task ISPC 带来 %.2fx 的加速)\n", minSerial/minTaskISPC);
+    printf("\t\t\t\t(AVX2 手写带来 %.2fx 的加速，相对 ISPC 为 %.2fx)\n", minSerial/minAVX, minISPC/minAVX);
 
     delete [] values;
     delete [] output;
